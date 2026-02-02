@@ -95,8 +95,7 @@ TEST(Fetch, BytesPlacedInCtrlRegs) {
 // tests that fetch properly increments PC
 TEST(Fetch, IncrementsPC) {
   init_mem(1024);
-  prog_mem[0] = TRP;
-  prog_mem[1] = 0;
+  reg_file[PC] = 0;
   ASSERT_TRUE(fetch());
   EXPECT_EQ(reg_file[PC], 8);
 }
