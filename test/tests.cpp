@@ -228,7 +228,7 @@ TEST(Decode, InvalidOperationsFail) {
   }
 }
 
-TEST(ExecuteJump, JumpSetsPC) {
+TEST(ExecuteFlow, JumpSetsPC) {
   initialize_memory(1024);
   set_operation(JMP);
   set_immediate(72);
@@ -237,13 +237,23 @@ TEST(ExecuteJump, JumpSetsPC) {
   EXPECT_EQ(72, reg_file[PC]);
 }
 
-TEST(ExecuteJump, JumpBeyondMemoryFails) {
+TEST(ExecuteFlow, JumpBeyondMemoryFails) {
   initialize_memory(1024);
-  set_operands(JMP);
-  set_immediate(2048);
+  set_operation(JMP);
+  set_immediate(1024);
 
   EXPECT_FALSE(execute());
-  
+}
+
+TEST(ExecuteFlow, JumpToLast7BytesFails) {
+  initialize_memory(1024);
+
+  set_operation(JMP);
+
+  for (int i = 1; i < 8; i++) {
+    set_immediate(1024 - i);
+    ASSERT_FALSE(execute());
+  }
 }
 
 TEST(ExecuteMem, MovCopiesContents) {
@@ -253,7 +263,6 @@ TEST(ExecuteMem, MovCopiesContents) {
 
   EXPECT_TRUE(execute());
   ASSERT_EQ(0x0FF1CE, reg_file[R1]);
-
 }
 
 TEST(ExecuteMem, MoviPutsImmediateInRegister) {

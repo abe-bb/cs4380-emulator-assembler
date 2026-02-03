@@ -1,5 +1,7 @@
 #include "../include/emu4380.h"
 #include <algorithm>
+#include <iostream>
+#include <memory>
 #include <vector>
 
 unsigned int MEM_SIZE = 0b1 << 17;
@@ -7,6 +9,80 @@ unsigned int MEM_SIZE = 0b1 << 17;
 unsigned int reg_file[22] = {0};
 unsigned char* prog_mem = 0;
 unsigned int cntrl_regs[5] = {0};
+
+bool jmp() {
+  // can't jump to the last 7 bytes of program memory
+  if (cntrl_regs[IMMEDIATE] > MEM_SIZE - 8) {
+    return false;
+  }
+
+  reg_file[PC] = cntrl_regs[IMMEDIATE];
+  return true;
+}
+
+bool mov() {
+  return false;
+}
+
+bool movi() {
+  return false;
+}
+
+bool lda() {
+  return false;
+}
+
+bool str() {
+  return false;
+}
+
+bool ldr() {
+  return false;
+}
+
+bool stb() {
+  return false;
+}
+
+bool ldb() {
+  return false;
+}
+
+bool add() {
+  return false;
+}
+
+bool addi() {
+  return false;
+}
+
+bool sub() {
+  return false;
+}
+
+bool subi() {
+  return false;
+}
+
+bool mul() {
+  return false;
+}
+
+bool muli() {
+  return false;
+}
+
+bool div() {
+  return false;
+}
+
+bool sdiv() {
+  return false;
+}
+
+bool divi() {
+  return false;
+}
 
 bool init_mem(unsigned int size) {
   prog_mem = new unsigned char[size];
@@ -32,12 +108,9 @@ bool fetch() {
   cntrl_regs[OPERAND_1] = prog_mem[load_addr + 1];
   cntrl_regs[OPERAND_2] = prog_mem[load_addr + 2];
   cntrl_regs[OPERAND_3] = prog_mem[load_addr + 3];
-  cntrl_regs[IMMEDIATE] = prog_mem[load_addr + 4] |
-                          prog_mem[load_addr + 5] << 8 |
-                          prog_mem[load_addr + 6] << 16 |
-                          prog_mem[load_addr + 7] << 24;
+  // cast to unsigned int pointer and dereference (assumes little endian environment)
+  cntrl_regs[IMMEDIATE] = *(unsigned int*)(prog_mem + load_addr + 4);
                           
-
   // increment PC and return true
   reg_file[PC] += 8;
     return true;
@@ -90,9 +163,47 @@ bool decode() {
   return op1 <= 21 && op2 <= 21 && op3 <= 21;
 }
 
-// TODO: Don't allow jump to an invalid memory address (last 7 addresses)
-// ALSO write test for this behavior
 bool execute() {
+  switch(cntrl_regs[OPERATION]) {
+    case JMP:
+      return jmp();
+    case MOV:
+      return mov();
+    case MOVI:
+      return movi();
+    case LDA:
+      return lda();
+    case STR:
+      return str();
+    case LDR:
+      return ldr();
+    case STB:
+      return stb();
+    case LDB:
+      return ldb();
+    case ADD:
+      return add();
+    case ADDI:
+      return addi();
+    case SUB:
+      return sub();
+    case SUBI:
+      return subi();
+    case MUL:
+      return mul();
+    case MULI:
+      return muli();
+    case DIV:
+      return div();
+    case SDIV:
+      return sdiv();
+    case DIVI:
+      return divi();        
+    default:
+      std::cerr << "execute() called with invalid operation!";
+      throw "Can't handle invalid operation!";
+      
+  }
   return false;
 }
 
