@@ -23,3 +23,8 @@ target_link_libraries(
   runTests
   GTest::gtest_main
 )
+
+add_executable(
+  emu4380
+  src/emu4380.cpp src/main.cpp
+)

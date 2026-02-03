@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 extern unsigned int MEM_SIZE;
 
 extern unsigned int reg_file[22];
@@ -17,4 +18,13 @@ bool init_mem(unsigned int size);
 bool fetch();
 bool decode();
 bool execute();
+
+
+// convenience categorization of operations
+extern std::vector<unsigned int> operations_0operand_3dc;
+extern std::vector<unsigned int> operations_1operand_2dc;
+extern std::vector<unsigned int> operations_2operand_1dc;
+extern std::vector<unsigned int> operations_3operand_0dc;
+
+
 

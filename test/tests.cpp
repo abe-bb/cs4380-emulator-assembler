@@ -27,12 +27,6 @@ void set_immediate(unsigned int immediate) {
   cntrl_regs[IMMEDIATE] = immediate;
 }
 
-// operations categorized by number of operands
-std::vector<unsigned int> operations_0operand_3dc = {1, 31};
-std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13};
-std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26};
-std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25};
-
 TEST(Setup, TestMemoryInit) {
   initialize_memory();
 
@@ -46,6 +40,14 @@ TEST(Fetch, OutOfBoundsAddressFails) {
   initialize_memory();
   reg_file[PC] = MEM_SIZE + 1;
   ASSERT_FALSE(fetch());
+}
+
+TEST(Fetch, Last7BytesFetchFails) {
+  initialize_memory(1024);
+  for (int i = 1; i < 8; i++) {
+    reg_file[PC] = MEM_SIZE - i;
+    ASSERT_FALSE(fetch()) << "fetch succeed with address: " << MEM_SIZE - i << " and MEM_SIZE: " << MEM_SIZE;
+  }
 }
 
 // fetch from valid memory location should succeed
@@ -100,32 +102,36 @@ TEST(Fetch, IncrementsPC) {
   EXPECT_EQ(reg_file[PC], 8);
 }
 
-TEST(Decode, DontCareValuesShouldntFail) {
+TEST(Decode, SingleDontCareValuesShouldntFail) {
 
   for (auto operation : operations_2operand_1dc) {
-    for (unsigned int invalid_operand = 16; invalid_operand < 256; invalid_operand++) {
-      set_operands(operation);
+    for (unsigned int invalid_operand = 22; invalid_operand < 256; invalid_operand++) {
+      set_operation(operation);
       set_operands(R0, R1, invalid_operand);
 
-      ASSERT_TRUE(decode()) << "Don't Care register value caused decode failure";
+      ASSERT_TRUE(decode()) << "Operation: " << operation << " with 1 Don't Care register value: " << invalid_operand << " caused decode failure";
     }
   }
+}
 
+TEST(Decode, DoubleDontCareValuesShouldntFail) {
   for (auto operation : operations_1operand_2dc) {
-    for (unsigned int invalid_operand = 16; invalid_operand < 256; invalid_operand++) {
-      set_operands(operation);
+    for (unsigned int invalid_operand = 22; invalid_operand < 256; invalid_operand++) {
+      set_operation(operation);
       set_operands(R0, invalid_operand, invalid_operand);
 
-      ASSERT_TRUE(decode()) << "Don't Care register value caused decode failure";
+      ASSERT_TRUE(decode()) << "Operation with 2 Don't Care register value caused decode failure";
     }
   }
+}
 
-  for (auto operation : operations_3operand_0dc) {
-    for (unsigned int invalid_operand = 16; invalid_operand < 256; invalid_operand++) {
-      set_operands(operation);
+TEST(Decode, TripleDontCareValuesShouldntFail) {
+  for (auto operation : operations_0operand_3dc) {
+    for (unsigned int invalid_operand = 22; invalid_operand < 256; invalid_operand++) {
+      set_operation(operation);
       set_operands(invalid_operand, invalid_operand, invalid_operand);
 
-      ASSERT_TRUE(decode()) << "Don't Care register value caused decode failure";
+      ASSERT_TRUE(decode()) << "Operation with 3 Don't Care register value caused decode failure";
     }
   }
 }
@@ -138,11 +144,12 @@ TEST(Decode, InvalidOperandsFail) {
 
   for (unsigned int operation: operations_with_operands) {
     // loop over invalid operand values
-    for (unsigned int invalid_operand = 16; invalid_operand < 256; invalid_operand++) {
-      set_operands(invalid_operand);
+    for (unsigned int invalid_operand = 22; invalid_operand < 256; invalid_operand++) {
+      set_operation(operation);
+      set_operands(invalid_operand, invalid_operand, invalid_operand);
 
-      EXPECT_FALSE(decode()) << "Operation: " << operation << " with all operands set to: " <<
-      invalid_operand << "decode succeeded despite invalid operands";
+      ASSERT_FALSE(decode()) << "decode on operation: " << operation << " with all operands set to: " <<
+      invalid_operand << " succeeded despite invalid operands";
     }
   }
 }
