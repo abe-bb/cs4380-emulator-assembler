@@ -1,7 +1,6 @@
 #include "../include/emu4380.h"
 #include <algorithm>
 #include <iostream>
-#include <memory>
 #include <vector>
 
 unsigned int MEM_SIZE = 0b1 << 17;
@@ -10,9 +9,13 @@ unsigned int reg_file[22] = {0};
 unsigned char* prog_mem = 0;
 unsigned int cntrl_regs[5] = {0};
 
+bool validate_address(unsigned int address, unsigned int size = 4) {
+  return address <= MEM_SIZE - size;
+}
+
 bool jmp() {
   // can't jump to the last 7 bytes of program memory
-  if (cntrl_regs[IMMEDIATE] > MEM_SIZE - 8) {
+  if (!validate_address(cntrl_regs[IMMEDIATE], 8)) {
     return false;
   }
 
@@ -21,31 +24,78 @@ bool jmp() {
 }
 
 bool mov() {
-  return false;
+  auto r_src = cntrl_regs[OPERAND_2];
+  auto r_dest = cntrl_regs[OPERAND_1];
+
+  reg_file[r_dest] = reg_file[r_src];  
+  return true;
 }
 
 bool movi() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+
+  reg_file[r_dest] = cntrl_regs[IMMEDIATE];
+  return true;
 }
 
 bool lda() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  if (!validate_address(address)) {
+    return false;
+  }
+
+  reg_file[r_dest] = *(unsigned int*)(prog_mem + address);
+  return true;
 }
 
 bool str() {
-  return false;
+  auto r_src = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  if (!validate_address(address)) {
+    return false;
+  }
+
+  *(unsigned int*)(prog_mem + address) = reg_file[r_src];
+  return true;
 }
 
 bool ldr() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  if (!validate_address(address)) {
+    return false;
+  }
+
+  reg_file[r_dest] = *(unsigned int*)(prog_mem + address);
+  return true;
 }
 
 bool stb() {
-  return false;
+  auto r_src = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  if (!validate_address(address, 1)) {
+    return false;
+  }
+
+  prog_mem[address] = (unsigned char)(reg_file[r_src] & 0x000000FF);
+  return true;
 }
 
 bool ldb() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  if (!validate_address(address, 1)) {
+    return false;
+  }
+
+  reg_file[r_dest] = prog_mem[address];
+  return true;
 }
 
 bool add() {

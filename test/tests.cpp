@@ -256,7 +256,7 @@ TEST(ExecuteFlow, JumpToLast7BytesFails) {
   }
 }
 
-TEST(ExecuteMem, MovCopiesContents) {
+TEST(ExecuteMove, MovCopiesContents) {
   set_operation(MOV);
   set_operands(R1, R2);
   reg_file[R2] = 0x0FF1CE;
@@ -265,7 +265,7 @@ TEST(ExecuteMem, MovCopiesContents) {
   ASSERT_EQ(0x0FF1CE, reg_file[R1]);
 }
 
-TEST(ExecuteMem, MoviPutsImmediateInRegister) {
+TEST(ExecuteMove, MoviPutsImmediateInRegister) {
   initialize_memory(1024);
   set_operation(MOVI);
   set_operands(R5);
@@ -278,7 +278,7 @@ TEST(ExecuteMem, MoviPutsImmediateInRegister) {
   ASSERT_EQ(0x45FA78ED, reg_file[R5]) << "MOVI did not store immediate value in the specified register";
 }
 
-TEST(ExecuteMem, LdaLoadsMemoryToRegister) {
+TEST(ExecuteMove, LdaLoadsMemoryToRegister) {
   initialize_memory(1024);
   set_operation(LDA);
   set_operands(R6);
@@ -291,9 +291,30 @@ TEST(ExecuteMem, LdaLoadsMemoryToRegister) {
   ASSERT_EQ(0xAF, reg_file[R6]) << "LDA failed to load memory contents to register";
 }
 
+TEST(ExecuteMove, LdaFailsBeyondMemory) {
+  initialize_memory(1024);
+  set_operation(LDA);
+  set_operands(R6);
+  set_immediate(1024);
+
+  ASSERT_FALSE(execute());
+}
+
+TEST(ExecuteMove, LdaFailsLast3Addresses) {
+  initialize_memory(1024);
+  set_operation(LDA);
+  set_operands(R6);
+
+  
+  for (int i = 3; i<4; i++) {
+    set_immediate(1024 - i);
+    ASSERT_FALSE(execute());
+  }
+}
+
 // loads the value from memory into a register
-TEST(ExecuteMem, TestLDA) {
-  init_mem(1024);
+TEST(ExecuteMove, TestLDA32BitLoad) {
+  initialize_memory(1024);
 
   prog_mem[60] = 0x21;
   prog_mem[61] = 0x43;
@@ -308,7 +329,7 @@ TEST(ExecuteMem, TestLDA) {
   EXPECT_EQ(0x87654321, reg_file[R0]);
 }
 
-TEST(ExecuteMem, StrStoresIntToMemory) {
+TEST(ExecuteMove, StrStoresIntToMemory) {
   initialize_memory(1024);
   set_operation(STR);
   set_operands(R7);
@@ -328,7 +349,29 @@ TEST(ExecuteMem, StrStoresIntToMemory) {
   EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << (int)prog_mem[506];
 }
 
-TEST(ExecuteMem, TestLDR) {
+TEST(ExecuteMove, StrFailsBeyondMemory) {
+  initialize_memory(1024);
+  set_operation(STR);
+  set_operands(R6);
+  set_immediate(1024);
+
+  ASSERT_FALSE(execute());
+}
+
+TEST(ExecuteMove, StrFailsLast3Addresses) {
+  initialize_memory(1024);
+  set_operation(STR);
+  set_operands(R6);
+
+  
+  for (int i = 3; i<4; i++) {
+    set_immediate(1024 - i);
+    ASSERT_FALSE(execute());
+  }
+}
+
+
+TEST(ExecuteMove, TestLdr) {
   init_mem(1024);
 
   prog_mem[60] = 0x21;
@@ -345,7 +388,28 @@ TEST(ExecuteMem, TestLDR) {
   EXPECT_EQ(-2023406815, (int) reg_file[R0]);
 }
 
-TEST(ExecuteMem, TestSTB) {
+TEST(ExecuteMove, LdrFailsBeyondMemory) {
+  initialize_memory(1024);
+  set_operation(LDR);
+  set_operands(R6);
+  set_immediate(1024);
+
+  ASSERT_FALSE(execute());
+}
+
+TEST(ExecuteMove, LdrFailsLast3Addresses) {
+  initialize_memory(1024);
+  set_operation(LDR);
+  set_operands(R6);
+
+  
+  for (int i = 3; i<4; i++) {
+    set_immediate(1024 - i);
+    ASSERT_FALSE(execute());
+  }
+}
+
+TEST(ExecuteMove, TestStb) {
   init_mem(1024);
 
   reg_file[R0] = 0xCD;
@@ -355,12 +419,38 @@ TEST(ExecuteMem, TestSTB) {
   set_immediate(60);
 
   ASSERT_TRUE(execute());
-  // check 0x87654321 interpreted as two's compliment
   EXPECT_EQ(0xCD, prog_mem[60]);
 }
 
+TEST(ExecuteMove, TestStbStores1Byte) {
+  init_mem(1024);
 
-TEST(ExecuteMem, TestLDB) {
+  reg_file[R0] = 0x87654321;
+
+  set_operation(STB);
+  set_operands(R0);
+  set_immediate(60);
+
+  ASSERT_TRUE(execute());
+  EXPECT_EQ(0x21, prog_mem[60]);
+  EXPECT_EQ(0, prog_mem[61]);
+  EXPECT_EQ(0, prog_mem[62]);
+  EXPECT_EQ(0, prog_mem[63]);
+  EXPECT_EQ(0, prog_mem[57]);
+  EXPECT_EQ(0, prog_mem[58]);
+  EXPECT_EQ(0, prog_mem[59]);
+}
+
+TEST(ExecuteMove, StbFailsBeyondMemory) {
+  initialize_memory(1024);
+  set_operation(STB);
+  set_operands(R6);
+  set_immediate(1024);
+
+  ASSERT_FALSE(execute());
+}
+
+TEST(ExecuteMove, TestLdb) {
   init_mem(1024);
 
   prog_mem[60] = 0xCD;
@@ -370,8 +460,16 @@ TEST(ExecuteMem, TestLDB) {
   set_immediate(60);
 
   ASSERT_TRUE(execute());
-  // check 0x87654321 interpreted as two's compliment
-  EXPECT_EQ(prog_mem[60], 0xCD);
+  EXPECT_EQ(0xCD, reg_file[R0]);
+}
+
+TEST(ExecuteMove, LdbFailsBeyondMemory) {
+  initialize_memory(1024);
+  set_operation(LDB);
+  set_operands(R6);
+  set_immediate(1024);
+
+  ASSERT_FALSE(execute());
 }
 
 TEST(ExecuteMath, TestADD) {
