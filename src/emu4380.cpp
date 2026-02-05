@@ -185,6 +185,10 @@ bool divi() {
   auto r_src1 = cntrl_regs[OPERAND_2];
   auto immed = cntrl_regs[IMMEDIATE];
 
+  if (immed == 0) {
+    return false;
+  }
+
   reg_file[r_dest] = reg_file[r_src1] / immed;
   return true;
 }

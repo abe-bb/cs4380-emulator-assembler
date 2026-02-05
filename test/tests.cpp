@@ -547,7 +547,7 @@ TEST(ExecuteMath, TestMULI) {
   ASSERT_EQ(1012, reg_file[R2]);
 }
 
-TEST(ExecuteMath, TestDIV) {
+TEST(ExecuteMath, TestDiv) {
   set_operation(DIV);
   set_operands(R2, R1, R0);
   set_immediate(0);
@@ -560,7 +560,18 @@ TEST(ExecuteMath, TestDIV) {
   ASSERT_EQ(256, reg_file[R2]);
 }
 
-TEST(ExecuteMath, TestSDIV) {
+TEST(ExecuteMath, TestDivByZeroFails) {
+  set_operation(DIV);
+  set_operands(R2, R1, R0);
+  set_immediate(0);
+
+  reg_file[R1] = 109568;
+  reg_file[R0] = 0;
+
+  ASSERT_FALSE(execute());
+}
+
+TEST(ExecuteMath, TestSdiv) {
   set_operation(SDIV);
   set_operands(R2, R1, R0);
   set_immediate(0);
@@ -573,7 +584,18 @@ TEST(ExecuteMath, TestSDIV) {
   ASSERT_EQ(-256, (int)reg_file[R2]);
 }
 
-TEST(ExecuteMath, TestDIVI) {
+TEST(ExecuteMath, TestSdivByZeroFails) {
+  set_operation(SDIV);
+  set_operands(R2, R1, R0);
+  set_immediate(0);
+
+  reg_file[R1] = -109568;
+  reg_file[R0] = 0;
+
+  ASSERT_FALSE(execute());
+}
+
+TEST(ExecuteMath, TestDivi) {
   set_operation(DIVI);
   set_operands(R2, R1);
   set_immediate(428);
@@ -583,5 +605,15 @@ TEST(ExecuteMath, TestDIVI) {
   ASSERT_TRUE(execute());
 
   ASSERT_EQ(256, reg_file[R2]);
+}
+
+TEST(ExecuteMath, TestDiviByZeroFails) {
+  set_operation(DIVI);
+  set_operands(R2, R1);
+  set_immediate(0);
+
+  reg_file[R1] = 109568;
+
+  ASSERT_FALSE(execute());
 }
 
