@@ -502,8 +502,8 @@ TEST(ExecuteMath, TestSUB) {
   set_operands(R2, R1, R0);
   set_immediate(0);
 
-  reg_file[R0] = 51;
-  reg_file[R1] = 34;
+  reg_file[R0] = 34;
+  reg_file[R1] = 51;
 
   ASSERT_TRUE(execute());
 

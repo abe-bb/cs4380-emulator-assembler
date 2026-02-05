@@ -99,39 +99,94 @@ bool ldb() {
 }
 
 bool add() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto r_src2 = cntrl_regs[OPERAND_3];
+
+  reg_file[r_dest] = reg_file[r_src1] + reg_file[r_src2];
+  return true;
 }
 
 bool addi() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto immed = cntrl_regs[IMMEDIATE];
+
+  reg_file[r_dest] = reg_file[r_src1] + immed;
+  return true;
 }
 
 bool sub() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto r_src2 = cntrl_regs[OPERAND_3];
+
+  reg_file[r_dest] = reg_file[r_src1] - reg_file[r_src2];
+  return true;
 }
 
 bool subi() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto immed = cntrl_regs[IMMEDIATE];
+
+  reg_file[r_dest] = reg_file[r_src1] - immed;
+  return true;
 }
 
 bool mul() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto r_src2 = cntrl_regs[OPERAND_3];
+
+  reg_file[r_dest] = reg_file[r_src1] * reg_file[r_src2];
+  return true;
 }
 
 bool muli() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto immed = cntrl_regs[IMMEDIATE];
+
+  reg_file[r_dest] = reg_file[r_src1] * immed;
+  return true;
 }
 
 bool div() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto r_src2 = cntrl_regs[OPERAND_3];
+
+  // can't divide by zero
+  if (reg_file[r_src2] == 0) {
+    return false;
+  }
+
+  reg_file[r_dest] = reg_file[r_src1] / reg_file[r_src2];
+  return true;
 }
 
 bool sdiv() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto r_src2 = cntrl_regs[OPERAND_3];
+
+  // can't divide by zero
+  if (reg_file[r_src2] == 0) {
+    return false;
+  }
+
+  reg_file[r_dest] = (unsigned int)((signed int)reg_file[r_src1] / (signed int)reg_file[r_src2]);
+  return true;
 }
 
 bool divi() {
-  return false;
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto immed = cntrl_regs[IMMEDIATE];
+
+  reg_file[r_dest] = reg_file[r_src1] / immed;
+  return true;
 }
 
 bool init_mem(unsigned int size) {
