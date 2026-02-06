@@ -14,7 +14,7 @@ bool validate_address(unsigned int address, unsigned int size = 4) {
 }
 
 bool jmp() {
-  // can't jump to the last 7 bytes of program memory
+  // can't jump to the last 7 bytes of program memory (or beyond)
   if (!validate_address(cntrl_regs[IMMEDIATE], 8)) {
     return false;
   }
