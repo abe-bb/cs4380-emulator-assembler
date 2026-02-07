@@ -24,8 +24,18 @@ cd ..
 # Test TRP 0 
 ../build/emu4380 ./binary/exit
 exit_code=$?
-echo -e "${GREEN}TEST: exit"
+echo -e "${GREEN}TEST: TRP 0 exit"
 if [ $exit_code -eq 0 ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test TRP 1
+program_output="$(../build/emu4380 ./binary/trp1_prints_R3)"
+exit_code=$?
+echo -e "${GREEN}TEST: TRP 1 print R3 to console"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "49923402" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"

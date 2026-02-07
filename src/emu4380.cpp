@@ -194,7 +194,7 @@ bool divi() {
 }
 
 bool trp_1() {
-  std::cout << prog_mem[R3];
+  std::cout << reg_file[R3];
   return true;
 }
 
@@ -224,6 +224,7 @@ bool trp() {
 
   switch (immed) {
     case 0:
+      std::cout << std::flush;
       exit(0);
     case 1:
       return trp_1();

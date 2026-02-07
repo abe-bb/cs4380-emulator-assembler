@@ -18,6 +18,7 @@ unsigned int parse_mem_size(std::string input) {
     }
     catch (std::out_of_range e) {
         std::cout << "Invalid input. Max memory size is 4294967295.\n";
+        std::cout << std::flush;
         exit(3);
 
     }
@@ -26,6 +27,7 @@ unsigned int parse_mem_size(std::string input) {
 void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
     if (program.size() > mem_size) {
         std::cout << "INSUFFICIENT MEMORY SPACE\n";
+        std::cout << std::flush;
         exit(2);
     }
 
@@ -44,6 +46,7 @@ void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
 
 void emulator_error(unsigned int instruction_addr) {
     std::cout << "INVALID INSTRUCTION AT: " << instruction_addr << "\n";
+    std::cout << std::flush;
 }
 
 int emulator_loop() {
