@@ -1,0 +1,4 @@
+00000000: 08 00 00 00 0000 0000 # Entry point address (first 4 bytes)1
+00000008: 1F 00 00 00 0400 0000 # TRP 4 read char into R3
+00000010: 1F 00 00 00 0300 0000 # TRP 3 print R3 as char
+00000018: 1F 00 00 00 0000 0000 # TRP 0 exit

@@ -21,6 +21,37 @@ cd ..
 
 # Run tests
 
+# Test too large memory size
+program_output="$(../build/emu4380 ./binary/trp1_prints_R3 4294967296 )"
+exit_code=$?
+echo -e "${GREEN}TEST: Memory argument too large"
+if [ $exit_code -eq 4 ] && [ "$program_output" = "Invalid memory size. Max memory size is 4294967295." ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test memory negative
+program_output="$(../build/emu4380 ./binary/trp1_prints_R3 -1 )"
+exit_code=$?
+echo -e "${GREEN}TEST: Memory is negative"
+if [ $exit_code -eq 4 ] && [ "$program_output" = "Invalid memory size. Max memory size is 4294967295." ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test memory too small for program
+program_output="$(../build/emu4380 ./binary/exit 8 )"
+exit_code=$?
+echo -e "${GREEN}TEST: Memory too small for program"
+if [ $exit_code -eq 2 ] && [ "$program_output" = "INSUFFICIENT MEMORY SPACE" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+
 # Test TRP 0 
 ../build/emu4380 ./binary/exit
 exit_code=$?
@@ -31,11 +62,61 @@ else
   echo -e "${RED}RESULT: failed${NONE}"
 fi
 
-# Test TRP 1
-program_output="$(../build/emu4380 ./binary/trp1_prints_R3)"
+# Test TRP 1 positive integer
+program_output="$(../build/emu4380 ./binary/trp1_prints_positive_R3)"
 exit_code=$?
-echo -e "${GREEN}TEST: TRP 1 print R3 to console"
+echo -e "${GREEN}TEST: TRP 1 prints positive R3 to console"
 if [ $exit_code -eq 0 ] && [ "$program_output" = "49923402" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test TRP 1 negative integer
+program_output="$(../build/emu4380 ./binary/trp1_prints_negative_R3)"
+exit_code=$?
+echo -e "${GREEN}TEST: TRP 1 prints negative R3 to console"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "-123934203" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test TRP 2 reads integer
+program_output="$(../build/emu4380 ./binary/trp2_reads_int <<< "-432890")"
+exit_code=$?
+echo -e "${GREEN}TEST: TRP 2 reads integer from console"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "-432890" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test TRP 3 writes character
+program_output="$(../build/emu4380 ./binary/trp3_writes_char)"
+exit_code=$?
+echo -e "${GREEN}TEST: TRP 3 writes character to console"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "H" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test TRP 4 reads character
+program_output="$(../build/emu4380 ./binary/trp4_reads_char <<< '!' )"
+exit_code=$?
+echo -e "${GREEN}TEST: TRP 4 reads character from console"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "!" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test TRP 4 reads only a single character
+program_output="$(../build/emu4380 ./binary/trp4_reads_char <<< '12345' )"
+exit_code=$?
+echo -e "${GREEN}TEST: TRP 4 reads only a single character from console"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "1" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
