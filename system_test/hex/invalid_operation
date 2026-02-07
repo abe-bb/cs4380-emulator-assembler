@@ -1,2 +1,2 @@
 00000000: 08 00 00 00 0000 0000 # Entry point address (first 4 bytes)
-00000008: 1F 00 00 00 0000 0000 # TRP IMMEDIATE: 0
+00000008: FF 00 00 00 0000 0000 # Invalid operation

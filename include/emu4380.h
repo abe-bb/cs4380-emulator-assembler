@@ -35,6 +35,7 @@ bool muli();
 bool div();
 bool sdiv();
 bool divi();
+bool trp();
 
 // convenience categorization of operations
 extern std::vector<unsigned int> operations_0operand_3dc;

@@ -193,6 +193,54 @@ bool divi() {
   return true;
 }
 
+bool trp_1() {
+  std::cout << prog_mem[R3];
+  return true;
+}
+
+bool trp_2() {
+  return false;
+}
+
+bool trp_3() {
+  return false;
+}
+
+bool trp_4() {
+  return false;
+}
+
+bool trp_98() {
+  return false;
+}
+
+bool trp() {
+  auto immed = cntrl_regs[IMMEDIATE];
+
+  // validate immediate
+  if (!(immed <= 4 || immed == 98)) {
+    return false;
+  }
+
+  switch (immed) {
+    case 0:
+      exit(0);
+    case 1:
+      return trp_1();
+    case 2:
+      return trp_2();
+    case 3:
+      return trp_3();
+    case 4:
+      return trp_4();
+    case 98:
+      return trp_98();
+    default:
+      std::cout << "TRP error! Invalid immediate value not detected.";
+      throw "Can't handle invalid trp code not detected!";
+  }
+}
+
 bool init_mem(unsigned int size) {
   prog_mem = new unsigned char[size];
   MEM_SIZE = size;
@@ -308,8 +356,10 @@ bool execute() {
       return sdiv();
     case DIVI:
       return divi();        
+    case TRP:
+      return trp();
     default:
-      std::cerr << "execute() called with invalid operation!";
+      std::cout << "execute() called with invalid operation!";
       throw "Can't handle invalid operation!";
       
   }
