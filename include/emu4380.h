@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 extern unsigned int MEM_SIZE;
 
@@ -43,5 +44,6 @@ extern std::vector<unsigned int> operations_1operand_2dc;
 extern std::vector<unsigned int> operations_2operand_1dc;
 extern std::vector<unsigned int> operations_3operand_0dc;
 
-
-
+// io functions
+bool parse_unsigned_int(std::string input, unsigned int& output);
+bool parse_int(std::string input, int& output);

@@ -5,25 +5,6 @@
 #include <vector>
 #include "../include/emu4380.h"
 
-unsigned int parse_mem_size(std::string input) {
-
-    try {
-        // parse input 
-        unsigned long base10 = std::stoul(input);
-        if (base10 > 4294967295) {
-          throw std::out_of_range("");
-        }
-
-        return base10;
-    }
-    catch (std::out_of_range e) {
-        std::cout << "Invalid input. Max memory size is 4294967295.\n";
-        std::cout << std::flush;
-        exit(3);
-
-    }
-}
-
 void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
     if (program.size() > mem_size) {
         std::cout << "INSUFFICIENT MEMORY SPACE\n";
@@ -73,7 +54,7 @@ int emulator_loop() {
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cout << "A binary file argument is required\n";
-        return 4;
+        return 3;
     }
 
     // read file in as bytes
@@ -89,7 +70,12 @@ int main(int argc, char* argv[]) {
     if (argc >= 3) {
         std::string in_mem_size = argv[2];
 
-        mem_size = parse_mem_size(in_mem_size);
+        unsigned int potential_mem_size = 0;
+        if (!parse_unsigned_int(in_mem_size, potential_mem_size)) {
+            std::cout << "Invalid memory size. Max memory size is 4294967295.\n" << std::flush;
+            return 4;
+        }
+        mem_size = potential_mem_size;
     }
 
     setup_memory(mem_size, program);

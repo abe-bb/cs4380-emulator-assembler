@@ -1,5 +1,6 @@
 #include "../include/emu4380.h"
 #include <algorithm>
+#include <ios>
 #include <iostream>
 #include <vector>
 
@@ -194,24 +195,44 @@ bool divi() {
 }
 
 bool trp_1() {
-  std::cout << reg_file[R3];
+  std::cout << (signed int) reg_file[R3];
   return true;
 }
 
 bool trp_2() {
-  return false;
+  std::string input;
+  std::cin >> input;
+
+  int potential_int;
+  if (!parse_int(input, potential_int)) {
+    std::cout << "\"" << input << "\" is either not within range or not an integer.\n" << std::flush; 
+    exit(5);
+
+  }
+
+  reg_file[R3] = potential_int;
+  return true;
 }
 
 bool trp_3() {
-  return false;
+  std::cout << (char)reg_file[R3];
+  return true;
 }
 
 bool trp_4() {
-  return false;
+  char input;
+  std::cin >> input;
+  reg_file[R3] = input;
+  return true;
 }
 
 bool trp_98() {
-  return false;
+  std::cout << "Register Contents:\n";
+  for (int i = 0; i < 22; i++) {
+    std::cout << i << "\t| 0x" << std::hex << reg_file[i] << std::dec << "\n";
+  }
+
+  return true;
 }
 
 bool trp() {
@@ -373,3 +394,40 @@ std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13};
 std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26};
 std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25};
 
+bool parse_unsigned_int(std::string input, unsigned int &output) {
+  try {
+    size_t chars_processed = 0;
+    // parse input 
+    unsigned long base10 = std::stoul(input, &chars_processed);
+    if (base10 > 4294967295) {
+      throw std::out_of_range("");
+    }
+
+    output = base10;
+    return true;
+  }
+  // handle stoi excpetions
+  catch (std::invalid_argument e) {
+    return false;
+  }
+  catch (std::out_of_range e) {
+    return false;
+  }
+}
+
+bool parse_int(std::string input, int &output) {
+  try {
+    // parse input 
+    int base10 = std::stoi(input);
+
+    output = base10;
+    return true;
+  }
+  // handle stoi excpetions
+  catch (std::invalid_argument e) {
+    return false;
+  }
+  catch (std::out_of_range e) {
+    return false;
+  }
+}
