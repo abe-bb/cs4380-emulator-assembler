@@ -122,6 +122,49 @@ else
   echo -e "${RED}RESULT: failed${NONE}"
 fi
 
+# Test TRP 98 prints register contents
+expected_output=$(cat <<HEREDOC
+Register Contents:
+0\t| 0x1
+1\t| 0x2
+2\t| 0x4
+3\t| 0x8
+4\t| 0x10
+5\t| 0x20
+6\t| 0x40
+7\t| 0x80
+8\t| 0x100
+9\t| 0x200
+10\t| 0x400
+11\t| 0x800
+12\t| 0x1000
+13\t| 0x2000
+14\t| 0x4000
+15\t| 0x8000
+16\t| 0xc0
+17\t| 0x20000
+18\t| 0x40000
+19\t| 0x80000
+20\t| 0x100000
+21\t| 0x200000
+HEREDOC
+)
+# expand tabs 
+printf -v expected_output "%b" "$expected_output"
+
+program_output="$(../build/emu4380 ./binary/trp98)"
+exit_code=$?
+echo -e "${GREEN}TEST: TRP 98 prints all registers to console"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "$expected_output" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+export output="$program_output"
+export expected="$expected_output"
+
+
 # Test invalid operation in binary 
 program_output="$(../build/emu4380 ./binary/invalid_operation)"
 exit_code=$?
