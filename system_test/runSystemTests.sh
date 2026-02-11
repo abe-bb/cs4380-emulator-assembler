@@ -124,29 +124,28 @@ fi
 
 # Test TRP 98 prints register contents
 expected_output=$(cat <<HEREDOC
-Register Contents:
-0\t| 0x1
-1\t| 0x2
-2\t| 0x4
-3\t| 0x8
-4\t| 0x10
-5\t| 0x20
-6\t| 0x40
-7\t| 0x80
-8\t| 0x100
-9\t| 0x200
-10\t| 0x400
-11\t| 0x800
-12\t| 0x1000
-13\t| 0x2000
-14\t| 0x4000
-15\t| 0x8000
-16\t| 0xc0
-17\t| 0x20000
-18\t| 0x40000
-19\t| 0x80000
-20\t| 0x100000
-21\t| 0x200000
+R0\t1
+R1\t2
+R2\t4
+R3\t8
+R4\t16
+R5\t32
+R6\t64
+R7\t128
+R8\t256
+R9\t512
+R10\t1024
+R11\t2048
+R12\t4096
+R13\t8192
+R14\t16384
+R15\t32768
+PC\t192
+SL\t131072
+SB\t262144
+SP\t524288
+FP\t1048576
+HP\t2097152
 HEREDOC
 )
 # expand tabs 

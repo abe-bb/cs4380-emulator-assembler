@@ -1,5 +1,6 @@
 #include "../include/emu4380.h"
 #include <algorithm>
+#include <cstdio>
 #include <ios>
 #include <iostream>
 #include <vector>
@@ -9,6 +10,8 @@ unsigned int MEM_SIZE = 0b1 << 17;
 unsigned int reg_file[22] = {0};
 unsigned char* prog_mem = 0;
 unsigned int cntrl_regs[5] = {0};
+
+PostOpFlag flag = NOTHING;
 
 bool validate_address(unsigned int address, unsigned int size = 4) {
   return address <= MEM_SIZE - size;
@@ -194,6 +197,11 @@ bool divi() {
   return true;
 }
 
+bool trp_0() {
+  flag = TERMINATE;
+  return true;
+}
+
 bool trp_1() {
   std::cout << (signed int) reg_file[R3];
   return true;
@@ -220,16 +228,22 @@ bool trp_3() {
 }
 
 bool trp_4() {
-  char input;
-  std::cin >> input;
+  char input = getchar();
   reg_file[R3] = input;
   return true;
 }
 
+std::string sp_reg_names[] = {"PC", "SL", "SB", "SP", "FP", "HP"};
 bool trp_98() {
-  std::cout << "Register Contents:\n";
   for (int i = 0; i < 22; i++) {
-    std::cout << i << "\t| 0x" << std::hex << reg_file[i] << std::dec << "\n";
+    if (i < 16) {
+      std::cout << "R" << i;
+    }
+    else {
+      std::cout << sp_reg_names[i - 16];
+    }
+
+    std::cout << "\t" << reg_file[i] << "\n";
   }
 
   return true;
@@ -245,8 +259,7 @@ bool trp() {
 
   switch (immed) {
     case 0:
-      std::cout << std::flush;
-      exit(0);
+      return trp_0();
     case 1:
       return trp_1();
     case 2:

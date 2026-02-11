@@ -30,6 +30,10 @@ void emulator_error(unsigned int instruction_addr) {
     std::cout << std::flush;
 }
 
+void cleanup() {
+    std::cout << std::flush;
+}
+
 int emulator_loop() {
     while (true) {
         unsigned int current_addr = reg_file[PC];
@@ -47,6 +51,11 @@ int emulator_loop() {
         if (!execute()) {
             emulator_error(current_addr);
             return 1;
+        }
+
+        if (flag == TERMINATE) {
+            cleanup();
+            exit(0);
         }
     }
 }
