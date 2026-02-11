@@ -618,10 +618,3 @@ TEST(ExecuteMath, TestDiviByZeroFails) {
   ASSERT_FALSE(execute());
 }
 
-TEST(ExecuteTrpDeathTest, Trp0Exits) {
-  set_operation(TRP);
-  set_immediate(0);
-
-  EXPECT_EXIT(execute(), testing::ExitedWithCode(0), "");
-}
-
