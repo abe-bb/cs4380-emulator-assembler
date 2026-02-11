@@ -1,5 +1,6 @@
 #include "../include/emu4380.h"
 #include <algorithm>
+#include <cstdio>
 #include <ios>
 #include <iostream>
 #include <vector>
@@ -227,8 +228,7 @@ bool trp_3() {
 }
 
 bool trp_4() {
-  char input;
-  std::cin >> input;
+  char input = getchar();
   reg_file[R3] = input;
   return true;
 }
