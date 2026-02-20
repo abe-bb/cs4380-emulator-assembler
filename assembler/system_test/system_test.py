@@ -30,7 +30,6 @@ def run_assembler(input_name: str) -> CompletedProcess:
     args = ["python", "../asm4380.py", input_dir + input_name + ".asm"]
     return subprocess.run(args)
 
-
 def test_directive_in_code_section():
     result = run_assembler("directive_in_code_section")
 
@@ -41,6 +40,13 @@ def test_missing_input_file():
 
     assert result.returncode == 1
 
+def test_given_example():
+    test_files = "given_example"
+    result = run_assembler(test_files)
+
+    assert result.returncode == 0
+    assert cmp_output_expected(test_files)
+    
 def test_simply_exit():
     test_files = "simply_exit"
     result = run_assembler(test_files)
@@ -62,9 +68,12 @@ def test_jmp_to_lbl():
     assert result.returncode == 0
     assert cmp_output_expected(test_files)
 
-# post session fixture that deletes all the assembler binary files
+# session fixture that deletes all the assembler binary files after the tests run
 @pytest.fixture(scope="session", autouse=True)
 def clean_binary_outputs():
+    # take no action before running tests
+    yield
+    # clean up files after test run
     for file_name in listdir(input_dir):
         if file_name.endswith(".bin"):
             os.remove(input_dir + file_name)
