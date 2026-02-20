@@ -1,0 +1,2 @@
+00000000: 04 00 00 00           # Entry point address (first 4 bytes)
+00000004: 1F 00 00 00 0000 0000 # TRP IMMEDIATE: 0

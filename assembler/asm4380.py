@@ -1,1 +1,1 @@
-print("Hello World!")
+exit(3)
