@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <vector>
+#include <iostream>
+
 #include "../include/emu4380.h"
 
 // helper function for initializing memory
@@ -226,6 +228,34 @@ TEST(Decode, InvalidOperationsFail) {
     cntrl_regs[OPERATION] = i;
 
     EXPECT_FALSE(decode()) << "decode for operation: " << i << "returned success (invalid operation)";
+  }
+}
+
+TEST(Decode, ValidTRPSucceeds) {
+  unsigned int valid_trp[] = {0, 1, 2, 3, 4, 98};
+
+  for (unsigned int trp : valid_trp) {
+    set_operation(TRP);
+    set_immediate(trp);
+
+    ASSERT_TRUE(decode());
+  }
+}
+
+TEST(Decode, InvalidTRPFails) {
+
+  for (unsigned int i = 5; i < 98; i++) {
+    set_operation(TRP);
+    set_immediate(i);
+
+    ASSERT_FALSE(decode());
+  }
+
+  for (unsigned int i = 99; i < 255; i++) {
+    set_operation(TRP);
+    set_immediate(i);
+
+    ASSERT_FALSE(decode());
   }
 }
 
@@ -618,3 +648,30 @@ TEST(ExecuteMath, TestDiviByZeroFails) {
   ASSERT_FALSE(execute());
 }
 
+TEST(ExecuteTRP, TRP4ReadsChar) {
+    // Create pipe to mock stdin
+    int fildes[2];
+    int status = pipe(fildes);
+    ASSERT_NE(status, -1);
+
+    // Swap `stdin` fd with the "read" end of the pipe
+    status = dup2(fildes[0], STDIN_FILENO);
+    ASSERT_NE(status, -1);
+
+    // Create payload
+    const char buf[] = "s\n";
+    const int bsize  = strlen(buf);
+
+    // Send payload through pipe
+    ssize_t nbytes = write(fildes[1], buf, bsize);
+    close(fildes[1]);
+
+    set_operation(TRP);
+    set_immediate(4);
+
+    // execute
+    ASSERT_TRUE(execute());
+
+    // check that R3 has teh right value
+    ASSERT_EQ('s', reg_file[R3]);
+}
