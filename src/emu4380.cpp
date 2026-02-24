@@ -1,7 +1,6 @@
 #include "../include/emu4380.h"
 #include <algorithm>
 #include <cstdio>
-#include <ios>
 #include <iostream>
 #include <vector>
 
@@ -46,11 +45,7 @@ bool lda() {
   auto r_dest = cntrl_regs[OPERAND_1];
   auto address = cntrl_regs[IMMEDIATE];
 
-  if (!validate_address(address)) {
-    return false;
-  }
-
-  reg_file[r_dest] = *(unsigned int*)(prog_mem + address);
+  reg_file[r_dest] = address;
   return true;
 }
 
@@ -189,25 +184,27 @@ bool divi() {
   auto r_src1 = cntrl_regs[OPERAND_2];
   auto immed = cntrl_regs[IMMEDIATE];
 
+  // can't divide by zero
   if (immed == 0) {
     return false;
   }
 
-  reg_file[r_dest] = reg_file[r_src1] / immed;
+  // signed division
+  reg_file[r_dest] = (unsigned int)((signed int)reg_file[r_src1] / (signed int)immed);
   return true;
 }
 
-bool trp_0() {
+bool trp0() {
   flag = TERMINATE;
   return true;
 }
 
-bool trp_1() {
+bool trp1() {
   std::cout << (signed int) reg_file[R3];
   return true;
 }
 
-bool trp_2() {
+bool trp2() {
   std::string input;
   std::cin >> input;
 
@@ -222,19 +219,21 @@ bool trp_2() {
   return true;
 }
 
-bool trp_3() {
+bool trp3() {
   std::cout << (char)reg_file[R3];
   return true;
 }
 
-bool trp_4() {
-  char input = getchar();
+bool trp4() {
+  char input;
+  input  = getchar();
+  // std::cin >> input;
   reg_file[R3] = input;
   return true;
 }
 
 std::string sp_reg_names[] = {"PC", "SL", "SB", "SP", "FP", "HP"};
-bool trp_98() {
+bool trp98() {
   for (int i = 0; i < 22; i++) {
     if (i < 16) {
       std::cout << "R" << i;
@@ -259,17 +258,17 @@ bool trp() {
 
   switch (immed) {
     case 0:
-      return trp_0();
+      return trp0();
     case 1:
-      return trp_1();
+      return trp1();
     case 2:
-      return trp_2();
+      return trp2();
     case 3:
-      return trp_3();
+      return trp3();
     case 4:
-      return trp_4();
+      return trp4();
     case 98:
-      return trp_98();
+      return trp98();
     default:
       std::cout << "TRP error! Invalid immediate value not detected.";
       throw "Can't handle invalid trp code not detected!";
@@ -328,6 +327,15 @@ bool decode() {
   auto op1 = cntrl_regs[OPERAND_1];
   auto op2 = cntrl_regs[OPERAND_2];
   auto op3 = cntrl_regs[OPERAND_3];
+
+  // validate trp immediate value
+  if (op == 31) {
+    unsigned int imm = cntrl_regs[IMMEDIATE];
+
+    if (!(imm <= 4 || imm == 98)) {
+      return false;
+    }
+  }
   
   // operation doesn't care about any operands, so return true
   auto begin = operations_0operand_3dc.begin();

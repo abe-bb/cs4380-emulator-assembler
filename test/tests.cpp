@@ -309,55 +309,64 @@ TEST(ExecuteMove, MoviPutsImmediateInRegister) {
   ASSERT_EQ(0x45FA78ED, reg_file[R5]) << "MOVI did not store immediate value in the specified register";
 }
 
-TEST(ExecuteMove, LdaLoadsMemoryToRegister) {
+// TEST(ExecuteMove, LdaLoadsMemoryToRegister) {
+//   initialize_memory(1024);
+//   set_operation(LDA);
+//   set_operands(R6);
+//   set_immediate(4);
+
+//   prog_mem[4] = 0xAF;
+
+//   EXPECT_TRUE(execute());
+
+//   ASSERT_EQ(0xAF, reg_file[R6]) << "LDA failed to load memory contents to register";
+// }
+
+// TEST(ExecuteMove, LdaFailsBeyondMemory) {
+//   initialize_memory(1024);
+//   set_operation(LDA);
+//   set_operands(R6);
+//   set_immediate(1024);
+
+//   ASSERT_FALSE(execute());
+// }
+
+// TEST(ExecuteMove, LdaFailsLast3Addresses) {
+//   initialize_memory(1024);
+//   set_operation(LDA);
+//   set_operands(R6);
+
+  
+//   for (int i = 3; i<4; i++) {
+//     set_immediate(1024 - i);
+//     ASSERT_FALSE(execute());
+//   }
+// }
+
+TEST(ExecuteMove, LdaPlacesAddressInRegister) {
   initialize_memory(1024);
   set_operation(LDA);
   set_operands(R6);
-  set_immediate(4);
+  set_immediate(157);
 
-  prog_mem[4] = 0xAF;
+  prog_mem[157] = 255;
 
   EXPECT_TRUE(execute());
 
-  ASSERT_EQ(0xAF, reg_file[R6]) << "LDA failed to load memory contents to register";
-}
-
-TEST(ExecuteMove, LdaFailsBeyondMemory) {
-  initialize_memory(1024);
-  set_operation(LDA);
-  set_operands(R6);
-  set_immediate(1024);
-
-  ASSERT_FALSE(execute());
-}
-
-TEST(ExecuteMove, LdaFailsLast3Addresses) {
-  initialize_memory(1024);
-  set_operation(LDA);
-  set_operands(R6);
-
-  
-  for (int i = 3; i<4; i++) {
-    set_immediate(1024 - i);
-    ASSERT_FALSE(execute());
-  }
+  ASSERT_EQ(157, reg_file[R6]) << "LDA failed to load memory contents to register";
 }
 
 // loads the value from memory into a register
 TEST(ExecuteMove, TestLDA32BitLoad) {
   initialize_memory(1024);
 
-  prog_mem[60] = 0x21;
-  prog_mem[61] = 0x43;
-  prog_mem[62] = 0x65;
-  prog_mem[63] = 0x87;
 
   set_operation(LDA);
   set_operands(R0);
-  set_immediate(60);
+  set_immediate(0xDEADBEEF);
 
   ASSERT_TRUE(execute());
-  EXPECT_EQ(0x87654321, reg_file[R0]);
+  EXPECT_EQ(0xDEADBEEF, reg_file[R0]);
 }
 
 TEST(ExecuteMove, StrStoresIntToMemory) {
@@ -599,7 +608,14 @@ TEST(ExecuteMath, TestDivByZeroFails) {
   reg_file[R1] = 109568;
   reg_file[R0] = 0;
 
-  ASSERT_FALSE(execute());
+  EXPECT_FALSE(execute());
+
+  set_operation(SDIV);
+  EXPECT_FALSE(execute());
+
+  
+  set_operation(DIVI);
+  EXPECT_FALSE(execute());
 }
 
 TEST(ExecuteMath, TestSdiv) {
@@ -638,6 +654,25 @@ TEST(ExecuteMath, TestDivi) {
   ASSERT_EQ(256, reg_file[R2]);
 }
 
+TEST(ExecuteMath, TestSignedDivi) {
+  set_operation(DIVI);
+  set_operands(R2, R1);
+
+  set_immediate(-428);
+  reg_file[R1] = 109568;
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(-256, reg_file[R2]);
+
+
+  reg_file[R1] = -109568;
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(256, reg_file[R2]);
+
+  set_immediate(428);
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(-256, reg_file[R2]);
+}
+
 TEST(ExecuteMath, TestDiviByZeroFails) {
   set_operation(DIVI);
   set_operands(R2, R1);
@@ -659,7 +694,7 @@ TEST(ExecuteTRP, TRP4ReadsChar) {
     ASSERT_NE(status, -1);
 
     // Create payload
-    const char buf[] = "s\n";
+    const char buf[] = "c";
     const int bsize  = strlen(buf);
 
     // Send payload through pipe
@@ -673,5 +708,44 @@ TEST(ExecuteTRP, TRP4ReadsChar) {
     ASSERT_TRUE(execute());
 
     // check that R3 has teh right value
-    ASSERT_EQ('s', reg_file[R3]);
+    ASSERT_EQ('c', reg_file[R3]);
+}
+
+TEST(ExecuteTRP, TRP4ReadsSuccessiveChars) {
+    // Create pipe to mock stdin
+    int fildes[2];
+    int status = pipe(fildes);
+    ASSERT_NE(status, -1);
+
+    // connect read end of pipe and stdin
+    status = dup2(fildes[0], STDIN_FILENO);
+    ASSERT_NE(status, -1);
+
+    // Create payload
+    const char buf[] = "asdf\n\rabcdefghijklmnopqrstuvwxyzABCDXYZ\t";
+    const int bsize  = strlen(buf);
+
+    // Send payload through pipe
+    ssize_t nbytes = write(fildes[1], buf, bsize);
+    close(fildes[1]);
+
+    set_operation(TRP);
+    set_immediate(4);
+
+    for (int i = 0; i < strlen(buf); i++) {
+      // execute
+      ASSERT_TRUE(execute());
+
+      // check that R3 has teh right value
+      ASSERT_EQ(buf[i], reg_file[R3]);
+    }
+}
+
+TEST(ExecuteTRP, ExecuteTrpNeverExits) {
+  set_operation(TRP);
+
+  for (unsigned int i = 0; i < 256; i++) {
+    set_immediate(i);
+    execute();
+  }
 }
