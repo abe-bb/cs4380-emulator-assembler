@@ -694,7 +694,7 @@ TEST(ExecuteTRP, TRP4ReadsChar) {
     ASSERT_NE(status, -1);
 
     // Create payload
-    const char buf[] = "c";
+    const char buf[] = "c\n";
     const int bsize  = strlen(buf);
 
     // Send payload through pipe
@@ -722,7 +722,7 @@ TEST(ExecuteTRP, TRP4ReadsSuccessiveChars) {
     ASSERT_NE(status, -1);
 
     // Create payload
-    const char buf[] = "asdf\n\rabcdefghijklmnopqrstuvwxyzABCDXYZ\t";
+    const char buf[] = "asdfabcdefghijklmnopqrstuvwxyzABCDXYZ";
     const int bsize  = strlen(buf);
 
     // Send payload through pipe

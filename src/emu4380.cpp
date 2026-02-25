@@ -226,8 +226,8 @@ bool trp3() {
 
 bool trp4() {
   char input;
-  input  = getchar();
-  // std::cin >> input;
+  // input  = getchar();
+  std::cin >> input;
   reg_file[R3] = input;
   return true;
 }
