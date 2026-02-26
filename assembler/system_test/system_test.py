@@ -27,7 +27,7 @@ def cmp_output_expected(input_name: str) -> bool:
     return filecmp.cmp(expected_dir + input_name + ".bin", input_dir + input_name + ".bin", shallow=False)
 
 def run_assembler(input_name: str) -> CompletedProcess:
-    args = ["python", "../asm4380.py", input_dir + input_name + ".asm"]
+    args = ["python", assembler_path, input_dir + input_name + ".asm"]
     return subprocess.run(args)
 
 def run_and_cmp(file_pair_prefix: str):
@@ -40,6 +40,11 @@ def test_directive_in_code_section():
     result = run_assembler("directive_in_code_section")
 
     assert result.returncode == 2
+
+def test_no_input_file_provided():
+    result = subprocess.run(["python", assembler_path])
+
+    assert result.returncode == 1
 
 def test_missing_input_file():
     result = run_assembler("this_file_doesnt_exist")
