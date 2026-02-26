@@ -30,6 +30,12 @@ def run_assembler(input_name: str) -> CompletedProcess:
     args = ["python", "../asm4380.py", input_dir + input_name + ".asm"]
     return subprocess.run(args)
 
+def run_and_cmp(file_pair_prefix: str):
+    result = run_assembler(file_pair_prefix)
+
+    assert result.returncode == 0
+    assert cmp_output_expected(file_pair_prefix)
+
 def test_directive_in_code_section():
     result = run_assembler("directive_in_code_section")
 
@@ -41,32 +47,25 @@ def test_missing_input_file():
     assert result.returncode == 1
 
 def test_given_example():
-    test_files = "given_example"
-    result = run_assembler(test_files)
-
-    assert result.returncode == 0
-    assert cmp_output_expected(test_files)
+    run_and_cmp("given_example")
     
 def test_simply_exit():
-    test_files = "simply_exit"
-    result = run_assembler(test_files)
-
-    assert result.returncode == 0
-    assert cmp_output_expected(test_files)
+    run_and_cmp("simply_exit")
 
 def test_bunch_of_comments():
-    test_files = "bunch_of_comments"
-    result = run_assembler(test_files)
-
-    assert result.returncode == 0
-    assert cmp_output_expected(test_files)
+    run_and_cmp("bunch_of_comments")
 
 def test_jmp_to_lbl():
-    test_files = "jmp_to_lbl"
-    result = run_assembler(test_files)
+    run_and_cmp("jmp_to_lbl")
 
-    assert result.returncode == 0
-    assert cmp_output_expected(test_files)
+def test_int_directive():
+    run_and_cmp("int_directive")
+
+def test_byt_integer_directive():
+    run_and_cmp("byt_integer_directive")
+
+def test_byte_char_directive():
+    run_and_cmp("byt_char_directive")
 
 # session fixture that deletes all the assembler binary files after the tests run
 @pytest.fixture(scope="session", autouse=True)
