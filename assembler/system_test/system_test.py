@@ -72,12 +72,12 @@ def test_byt_integer_directive():
 def test_byte_char_directive():
     run_and_cmp("byt_char_directive")
 
-# session fixture that deletes all the assembler binary files after the tests run
-@pytest.fixture(scope="session", autouse=True)
-def clean_binary_outputs():
-    # take no action before running tests
-    yield
-    # clean up files after test run
-    for file_name in listdir(input_dir):
-        if file_name.endswith(".bin"):
-            os.remove(input_dir + file_name)
+# # session fixture that deletes all the assembler binary files after the tests run
+# @pytest.fixture(scope="session", autouse=True)
+# def clean_binary_outputs():
+#     # take no action before running tests
+#     yield
+#     # clean up files after test run
+#     for file_name in listdir(input_dir):
+#         if file_name.endswith(".bin"):
+#             os.remove(input_dir + file_name)

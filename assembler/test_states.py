@@ -3,14 +3,13 @@ import pytest
 from asm_types import AsmState, AsmLine, Stage, AssemblerError
 from states import Label, LineStart, Directive, Instruction, LineEnd
 
-
 def test_start_to_label():
     asm_state = AsmState()
     line = AsmLine("HeLLo", 100)
 
     state = LineStart()
     result = state.run(asm_state, line)
-    assert(result is Label)
+    assert(type(result) is Label)
 
 def test_start_to_directive():
     asm_state = AsmState()
@@ -18,7 +17,7 @@ def test_start_to_directive():
 
     state = LineStart()
     result = state.run(asm_state, line)
-    assert(result is Directive)
+    assert(type(result) is Directive)
 
 def test_start_to_directive_in_code_fails():
     asm_state = AsmState()
@@ -36,8 +35,9 @@ def test_start_to_instruction():
     line = AsmLine(" \t \t \tTRP", 100)
 
     state = LineStart()
+    assert(asm_state.stage == Stage.Data)
     result = state.run(asm_state, line)
-    assert(result is Instruction)
+    assert(type(result) is Instruction)
     assert(asm_state.stage == Stage.Code)
 
 def test_start_to_comment():
@@ -46,12 +46,12 @@ def test_start_to_comment():
 
     state = LineStart()
     result = state.run(asm_state, line)
-    assert(result is LineEnd)
+    assert(type(result) is LineEnd)
 
     line.line = ";This is a comment at the beginning"
     line.index = 0
     result = state.run(asm_state, line)
-    assert (result is LineEnd)
+    assert (type(result) is LineEnd)
 
 def test_start_empty_line():
     asm_state = AsmState()
@@ -59,7 +59,7 @@ def test_start_empty_line():
 
     state = LineStart()
     result = state.run(asm_state, line)
-    assert(result is LineEnd)
+    assert(type(result) is LineEnd)
 
 def test_start_space_tab_line():
     asm_state = AsmState()
@@ -67,7 +67,7 @@ def test_start_space_tab_line():
 
     state = LineStart()
     result = state.run(asm_state, line)
-    assert(result is LineEnd)
+    assert(type(result) is LineEnd)
 
 def test_label_invalid_character():
     asm_state = AsmState()
@@ -96,7 +96,7 @@ def test_label_to_directive():
     state = Label()
     result = state.run(asm_state, line)
 
-    assert result is Directive
+    assert type(result) is Directive
     assert line.index == 12
 
 def test_label_to_instruction():
@@ -106,5 +106,42 @@ def test_label_to_instruction():
     state = Label()
     result = state.run(asm_state, line)
 
-    assert result is Instruction
+    assert type(result) is Instruction
     assert line.index == 13
+
+def test_instruction_trp_to_eol():
+    asm_state = AsmState()
+
+    state = Instruction()
+    asm_line = AsmLine("  trp #10", 1)
+    asm_line.index = 2
+
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 31
+    assert asm_state.bytecode[-4] == 10
+
+    asm_line.line = "  trp #98"
+    asm_line.index = 2
+    asm_line.line_num = 2
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 31
+    assert asm_state.bytecode[-4] == 98
+
+def test_instruction_jmp_to_eol():
+    asm_state = AsmState()
+
+    state = Instruction()
+    asm_line = AsmLine("  JMP HeLLo", 1)
+    asm_line.index = 2
+
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 1
+    assert asm_state.bytecode[-7] == 0
+    assert asm_state.bytecode[-6] == 0
+    assert asm_state.bytecode[-5] == 0
+
+    assert asm_state.label_list[0].label == "HeLLo"
+    assert asm_state.label_list[0].location == (len(asm_state.bytecode) - 4)

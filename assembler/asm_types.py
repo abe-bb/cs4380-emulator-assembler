@@ -32,9 +32,12 @@ class AsmState:
     def __init__(self):
         self.bytecode = bytearray()
         self.label_map: dict[str, int] = dict()
-        self.label_list = list[LabelMarker]
+        self.label_list: list[LabelMarker] = list()
 
         self.stage = Stage.Data
+
+        for i in range(4):
+            self.bytecode.append(0)
         
 
 def usage_error() -> NoReturn:

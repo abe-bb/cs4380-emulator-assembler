@@ -5,8 +5,9 @@
 # Instruction | Directive to LineEnd
 #
 # All of them can transition to Error
+from plist import Data
 
-from asm_types import AsmState, AsmLine, AssemblerError, Stage, OperandType
+from asm_types import AsmState, AsmLine, AssemblerError, Stage, OperandType, LabelMarker
 
 
 def skip_space_tab(line: AsmLine, allow_line_end = False):
@@ -27,10 +28,10 @@ def parse_label_name(line: AsmLine) -> str:
     while line.line[line.index].isalnum() or line.line[line.index] == "$" or line.line[line.index] == "_":
         label_name += line.line[line.index]
 
-        # increment the index and throw an error if we reach the end of the line
+        # increment the index and end if we hit end of line
         line.index += 1
         if line.index >= len(line.line):
-            raise AssemblerError(line.line_num)
+            return label_name
     return label_name
 
 def parse_alpha(line: AsmLine) -> str:
@@ -52,16 +53,42 @@ def parse_alphanumeric(line: AsmLine) -> str:
     return alphanum
 
 def parse_numeric(line:AsmLine) -> int:
-    pass
+    numeric = ""
 
-# TODO: finish implementing immediate handling
+    if line.line[line.index] == "-":
+        numeric += "-"
+        line.index += 1
+
+    while line.index < len(line.line) and line.line[line.index].isnumeric():
+        numeric += line.line[line.index]
+        line.index += 1
+
+    return int(numeric)
+
 def handle_immediate(asm_state: AsmState, line: AsmLine):
     if line.line[line.index] == "#":
         line.index += 1
         numeric = parse_numeric(line)
+        num_bytes = numeric.to_bytes(4, byteorder="little", signed=True)
+        for i in range(4):
+            asm_state.bytecode.append(num_bytes[i])
     else:
         label = parse_label_name(line)
+        label_marker = LabelMarker(label, len(asm_state.bytecode))
+        asm_state.label_list.append(label_marker)
 
+        # add placeholder bytes
+        for i in range(4):
+            asm_state.bytecode.append(0)
+
+def switch_to_code_stage(asm_state: AsmState):
+    asm_state.stage = Stage.Code
+
+    # write address to first 4 bytes
+    inst_addr = len(asm_state.bytecode)
+    addr_bytes = inst_addr.to_bytes(4, byteorder="little", signed=False);
+    for i in range(4):
+        asm_state.bytecode[i] = addr_bytes[i]
 
 # define required components per instruction
 reg2 = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.DC_I]
@@ -113,11 +140,11 @@ class LineStart(State):
 
         # check for empty or comment line
         if len(line.line) == 0 or line.line[line.index] == ";":
-            return LineEnd
+            return LineEnd()
 
         # check for label
         if line.line[line.index].isalnum():
-            return Label
+            return Label()
 
         # throw error for non space or tab character
         if not (line.line[line.index] == " " or line.line[line.index] == "\t"):
@@ -128,28 +155,30 @@ class LineStart(State):
 
         # comment or end of line, so end the line
         if line.index >= len(line.line) or line.line[line.index] == ";":
-            return LineEnd
+            return LineEnd()
         # alphabetic, so instruction
         if line.line[line.index].isalpha():
-            asm_state.stage = Stage.Code
-            return Instruction
+            # switch to Code stage if necessary
+            if asm_state.stage == Stage.Data:
+                switch_to_code_stage(asm_state)
+            return Instruction()
         # period, so directive
         if line.line[line.index] == ".":
             # Directives only allowed in the data stage
             if asm_state.stage != Stage.Data:
                 raise AssemblerError(line.line_num)
-            return Directive
+            return Directive()
 
         # no valid character found so raise an error
         raise AssemblerError(line.line_num)
 
 class Instruction(State):
     def run(self, asm_state: AsmState, line: AsmLine):
-        instruction = parse_alpha(line)
+        instruction = parse_alpha(line).upper()
 
         # invalid instruction found
         if not instruction in inst_operands:
-            return Error
+            return Error()
 
         skip_space_tab(line)
 
@@ -161,27 +190,27 @@ class Instruction(State):
             # emit zeros for don't care positions
             if operand == OperandType.DC:
                 asm_state.bytecode.append(0)
-            if operand == OperandType.DC_I:
+            elif operand == OperandType.DC_I:
                 for i in range(4):
                     asm_state.bytecode.append(0)
-            if operand == OperandType.Register:
+            elif operand == OperandType.Register:
                 skip_space_tab(line)
                 register = parse_alphanumeric(line)
                 # error if invalid register
                 if not register in valid_registers:
-                    return Error
+                    return Error()
                 asm_state.bytecode.append(bin_rep[register])
-            if operand == OperandType.Immediate:
+            elif operand == OperandType.Immediate:
                 skip_space_tab(line)
                 handle_immediate(asm_state, line)
 
         # make sure there's nothing but whitespace and comments at the end of the line
-        skip_space_tab(line)
-        if line.index <= len(line.line) and line.line[line.index] != ";":
-            return Error
+        skip_space_tab(line, allow_line_end=True)
+        if line.index < len(line.line) and line.line[line.index] != ";":
+            return Error()
 
         # end the line
-        return LineEnd
+        return LineEnd()
 
 class Directive(State):
     def run(self, asm_state: AsmState, line: AsmLine) -> State:
@@ -200,10 +229,11 @@ class Label(State):
         if line.line[line.index] == ".":
             if asm_state.stage != Stage.Data:
                 raise AssemblerError(line.line_num)
-            return Directive
+            return Directive()
         if line.line[line.index].isalpha():
-            asm_state.stage = Stage.Code
-            return Instruction
+            if asm_state.stage == Stage.Data:
+                switch_to_code_stage(asm_state)
+            return Instruction()
 
         # didn't find a valid character so raise an error
         raise AssemblerError(line.line_num)
@@ -214,4 +244,3 @@ class LineEnd(State):
 class Error(State):
     def run(self, asm_state: AsmState, line: AsmLine) -> State:
         raise AssemblerError(line.line_num)
-
