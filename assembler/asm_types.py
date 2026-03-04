@@ -16,6 +16,12 @@ class Stage(Enum):
     Data = 0
     Code = 1
 
+class OperandType(Enum):
+    DC = 0
+    DC_I = 1
+    Register = 2
+    Immediate = 3
+
 class AsmLine:
     def __init__(self, line: str, line_num: int):
         self.line: str = line
