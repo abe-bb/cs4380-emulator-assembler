@@ -98,7 +98,7 @@ reg2_immed = [OperandType.Register, OperandType.Register, OperandType.DC, Operan
 immed = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.Immediate]
 inst_operands = {
     "JMP": immed,
-    "MOV": reg1_immed,
+    "MOV": reg2,
     "MOVI": reg1_immed,
     "LDA": reg1_immed,
     "STR": reg1_immed,
@@ -195,7 +195,7 @@ class Instruction(State):
                     asm_state.bytecode.append(0)
             elif operand == OperandType.Register:
                 skip_space_tab(line)
-                register = parse_alphanumeric(line)
+                register = parse_alphanumeric(line).upper()
                 # error if invalid register
                 if not register in valid_registers:
                     return Error()

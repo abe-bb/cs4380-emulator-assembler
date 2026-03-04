@@ -145,3 +145,96 @@ def test_instruction_jmp_to_eol():
 
     assert asm_state.label_list[0].label == "HeLLo"
     assert asm_state.label_list[0].location == (len(asm_state.bytecode) - 4)
+
+def test_instruction_mov_to_eol():
+    asm_state = AsmState()
+
+    state = Instruction()
+    asm_line = AsmLine("  mov R9 FP", 1)
+    asm_line.index = 2
+
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 7
+    assert asm_state.bytecode[-7] == 9
+    assert asm_state.bytecode[-6] == 20
+    assert asm_state.bytecode[-5] == 0
+    assert asm_state.bytecode[-4] == 0
+    assert asm_state.bytecode[-3] == 0
+    assert asm_state.bytecode[-2] == 0
+    assert asm_state.bytecode[-1] == 0
+
+def test_instruction_movi_integer_to_eol():
+    asm_state = AsmState()
+
+    state = Instruction()
+    asm_line = AsmLine("  movi R11 #2147483647", 1)
+    asm_line.index = 2
+
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 8
+    assert asm_state.bytecode[-7] == 11
+    assert asm_state.bytecode[-6] == 0
+    assert asm_state.bytecode[-5] == 0
+    assert asm_state.bytecode[-4] == 255
+    assert asm_state.bytecode[-3] == 255
+    assert asm_state.bytecode[-2] == 255
+    assert asm_state.bytecode[-1] == 127
+
+def test_instruction_lda_address_to_eol():
+    asm_state = AsmState()
+
+    state = Instruction()
+    asm_line = AsmLine(" \t lda R6 Th$$$is_is_a_label$", 1)
+    asm_line.index = 3
+
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 9
+    assert asm_state.bytecode[-7] == 6
+    assert asm_state.bytecode[-6] == 0
+    assert asm_state.bytecode[-5] == 0
+    assert asm_state.bytecode[-4] == 0
+    assert asm_state.bytecode[-3] == 0
+    assert asm_state.bytecode[-2] == 0
+    assert asm_state.bytecode[-1] == 0
+
+    assert asm_state.label_list[0].label == "Th$$$is_is_a_label$"
+    assert asm_state.label_list[0].location == 8
+
+def test_instruction_add_to_eol():
+    asm_state = AsmState()
+
+    state = Instruction()
+    asm_line = AsmLine(" \t adD r5 r8 r14", 1)
+    asm_line.index = 3
+
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 18
+    assert asm_state.bytecode[-7] == 5
+    assert asm_state.bytecode[-6] == 8
+    assert asm_state.bytecode[-5] == 14
+    assert asm_state.bytecode[-4] == 0
+    assert asm_state.bytecode[-3] == 0
+    assert asm_state.bytecode[-2] == 0
+    assert asm_state.bytecode[-1] == 0
+
+def test_instruction_addi_to_eol():
+    asm_state = AsmState()
+
+    state = Instruction()
+    asm_line = AsmLine(" \t adDi r0 r1 #-1", 1)
+    asm_line.index = 3
+
+    result = state.run(asm_state, asm_line)
+    assert type(result) is LineEnd
+    assert asm_state.bytecode[-8] == 19
+    assert asm_state.bytecode[-7] == 0
+    assert asm_state.bytecode[-6] == 1
+    assert asm_state.bytecode[-5] == 0
+    assert asm_state.bytecode[-4] == 255
+    assert asm_state.bytecode[-3] == 255
+    assert asm_state.bytecode[-2] == 255
+    assert asm_state.bytecode[-1] == 255
