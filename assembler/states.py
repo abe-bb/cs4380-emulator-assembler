@@ -7,6 +7,12 @@
 # All of them can transition to Error
 from plist import Data
 
+# TODO:
+#  - Write tests for optional Directive Operands
+#  - Write tests that include every instruction
+#  - Write test that include every directive variation
+#  - Test error handling
+
 from asm_types import AsmState, AsmLine, AssemblerError, Stage, OperandType, LabelMarker
 
 
