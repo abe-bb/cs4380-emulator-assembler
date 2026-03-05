@@ -53,8 +53,11 @@ def parse_alphanumeric(line: AsmLine) -> str:
     return alphanum
 
 def parse_numeric(line:AsmLine) -> int:
-    numeric = ""
+    if line.line[line.index] != "#":
+        raise AssemblerError(line.line_num)
+    increment_index(line)
 
+    numeric = ""
     if line.line[line.index] == "-":
         numeric += "-"
         line.index += 1
@@ -65,13 +68,41 @@ def parse_numeric(line:AsmLine) -> int:
 
     return int(numeric)
 
+def parse_char(line: AsmLine) -> int:
+    if line.line[line.index] != "'":
+        raise AssemblerError(line.line_num)
+    increment_index(line)
+
+    char_byte = 0
+    # character to byte
+    if line.line[line.index] == "\\":
+        increment_index(line)
+        if not line.line[line.index] in escape_chars:
+            raise AssemblerError(line.line_num)
+        char_byte = ord(escape_chars[line.line[line.index]])
+    else:
+        char_byte = ord(line.line[line.index])
+        if char_byte < 0 or char_byte > 255:
+            raise AssemblerError(line.line_num)
+
+    increment_index(line)
+    if line.line[line.index] != "'":
+        raise AssemblerError(line.line_num)
+    increment_index(line, allow_eol=True)
+
+    return char_byte
+
 def handle_immediate(asm_state: AsmState, line: AsmLine):
     if line.line[line.index] == "#":
-        line.index += 1
         numeric = parse_numeric(line)
         num_bytes = numeric.to_bytes(4, byteorder="little", signed=True)
         for i in range(4):
             asm_state.bytecode.append(num_bytes[i])
+    elif line.line[line.index] == "'":
+        char_byte = parse_char(line)
+        asm_state.bytecode.append(char_byte)
+        for i in range(3):
+            asm_state.bytecode.append(0)
     else:
         label = parse_label_name(line)
         label_marker = LabelMarker(label, len(asm_state.bytecode))
@@ -90,12 +121,18 @@ def switch_to_code_stage(asm_state: AsmState):
     for i in range(4):
         asm_state.bytecode[i] = addr_bytes[i]
 
+def increment_index(line: AsmLine, allow_eol=False):
+    line.index += 1
+
+    if not allow_eol and line.index >= len(line.line):
+        raise AssemblerError(line.line_num)
+
 # define required components per instruction
-reg2 = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.DC_I]
-reg3 = [OperandType.Register, OperandType.Register, OperandType.Register, OperandType.DC_I]
-reg1_immed = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.Immediate]
-reg2_immed = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.Immediate]
-immed = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.Immediate]
+reg2 = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.DC_I, 1]
+reg3 = [OperandType.Register, OperandType.Register, OperandType.Register, OperandType.DC_I, 2]
+reg1_immed = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.Immediate, 1]
+reg2_immed = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.Immediate, 2]
+immed = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.Immediate, 0]
 inst_operands = {
     "JMP": immed,
     "MOV": reg2,
@@ -130,6 +167,8 @@ bin_rep = {
     "R12": 12, "R13": 13, "R14": 14, "R15": 15, "PC": 16, "SL": 17, "SB": 18, "SP": 19, "FP": 20, "HP": 21
 }
 
+escape_chars = {"t": "\t",  "\\": "\\", "n": "\n", "'": "'", "\"": "\"", "r": "\r", "b": "\b"}
+
 class State:
     def run(self, asm_state: AsmState, line: AsmLine) -> State:
         pass
@@ -149,7 +188,7 @@ class LineStart(State):
         # throw error for non space or tab character
         if not (line.line[line.index] == " " or line.line[line.index] == "\t"):
             raise AssemblerError(line.line_num)
-        line.index += 1
+        increment_index(line)
 
         skip_space_tab(line, True)
 
@@ -186,12 +225,14 @@ class Instruction(State):
         asm_state.bytecode.append(bin_rep[instruction])
 
         # convert operands into their binary representations
-        for operand in inst_operands[instruction]:
+        for i in range(4):
+            operand = inst_operands[instruction][i]
+            num_commas = inst_operands[instruction][4]
             # emit zeros for don't care positions
             if operand == OperandType.DC:
                 asm_state.bytecode.append(0)
             elif operand == OperandType.DC_I:
-                for i in range(4):
+                for j in range(4):
                     asm_state.bytecode.append(0)
             elif operand == OperandType.Register:
                 skip_space_tab(line)
@@ -200,6 +241,14 @@ class Instruction(State):
                 if not register in valid_registers:
                     return Error()
                 asm_state.bytecode.append(bin_rep[register])
+
+                # check for comma and skip over it
+                if i < num_commas:
+                    skip_space_tab(line)
+                    if line.line[line.index] != ",":
+                        return Error()
+                    increment_index(line)
+
             elif operand == OperandType.Immediate:
                 skip_space_tab(line)
                 handle_immediate(asm_state, line)
@@ -213,8 +262,54 @@ class Instruction(State):
         return LineEnd()
 
 class Directive(State):
-    def run(self, asm_state: AsmState, line: AsmLine) -> State:
-        pass
+    def run(self, asm_state: AsmState, line: AsmLine):
+        assert line.line[line.index] == "."
+        increment_index(line)
+
+        dir_type = parse_alpha(line).upper()
+
+        skip_space_tab(line, allow_line_end=True)
+        if dir_type == "INT":
+            integer = 0
+            # check for missing operand
+            if line.index < len(line.line) and line.line[line.index] != ";":
+                if line.line[line.index] != "#":
+                    return Error()
+                integer = parse_numeric(line)
+
+            # out of range
+            if integer < -2147483648 or integer > 2147483647:
+                return Error()
+            # store bytes
+            int_bytes = integer.to_bytes(4, byteorder="little", signed=True)
+            for i in range(4):
+                asm_state.bytecode.append(int_bytes[i])
+        elif dir_type == "BYT":
+            if line.line[line.index] != "#" and line.line[line.index] != "'":
+                return Error()
+
+            if line.line[line.index] == "#":
+                integer = parse_numeric(line)
+                # out of range
+                if integer < 0 or integer > 255:
+                    return Error()
+                # store bytes
+                int_byte = integer.to_bytes(1)
+                asm_state.bytecode.append(int_byte[0])
+            elif line.line[line.index] == "'":
+                char_byte = parse_char(line)
+                asm_state.bytecode.append(char_byte)
+
+
+        # make sure there's nothing but whitespace and comments at the end of the line
+        skip_space_tab(line, allow_line_end=True)
+        if line.index < len(line.line) and line.line[line.index] != ";":
+            return Error()
+
+        return LineEnd()
+
+
+
 
 class Label(State):
     def run(self, asm_state: AsmState, line: AsmLine):

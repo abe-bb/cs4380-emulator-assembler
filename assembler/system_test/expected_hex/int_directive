@@ -1,3 +1,3 @@
-00000000: 0c 00 00 00           # Entry point address
-00000004: 49 63 40 17           # INT directive value
-0000000c: 1F 00 00 00 0000 0000 # TRP 0
+00000000: 08 00 00 00           # Entry point address
+00000004: 17 40 63 49           # INT directive value
+00000008: 1F 00 00 00 0000 0000 # TRP 0

@@ -150,7 +150,7 @@ def test_instruction_mov_to_eol():
     asm_state = AsmState()
 
     state = Instruction()
-    asm_line = AsmLine("  mov R9 FP", 1)
+    asm_line = AsmLine("  mov R9, FP", 1)
     asm_line.index = 2
 
     result = state.run(asm_state, asm_line)
@@ -168,7 +168,7 @@ def test_instruction_movi_integer_to_eol():
     asm_state = AsmState()
 
     state = Instruction()
-    asm_line = AsmLine("  movi R11 #2147483647", 1)
+    asm_line = AsmLine("  movi R11, #2147483647", 1)
     asm_line.index = 2
 
     result = state.run(asm_state, asm_line)
@@ -186,7 +186,7 @@ def test_instruction_lda_address_to_eol():
     asm_state = AsmState()
 
     state = Instruction()
-    asm_line = AsmLine(" \t lda R6 Th$$$is_is_a_label$", 1)
+    asm_line = AsmLine(" \t lda R6, Th$$$is_is_a_label$", 1)
     asm_line.index = 3
 
     result = state.run(asm_state, asm_line)
@@ -207,7 +207,7 @@ def test_instruction_add_to_eol():
     asm_state = AsmState()
 
     state = Instruction()
-    asm_line = AsmLine(" \t adD r5 r8 r14", 1)
+    asm_line = AsmLine(" \t adD r5, r8, r14", 1)
     asm_line.index = 3
 
     result = state.run(asm_state, asm_line)
@@ -225,7 +225,7 @@ def test_instruction_addi_to_eol():
     asm_state = AsmState()
 
     state = Instruction()
-    asm_line = AsmLine(" \t adDi r0 r1 #-1", 1)
+    asm_line = AsmLine(" \t adDi r0, r1, #-1", 1)
     asm_line.index = 3
 
     result = state.run(asm_state, asm_line)

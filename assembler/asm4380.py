@@ -11,7 +11,7 @@ in_path = sys.argv[1]
 out_path = re.sub("asm$", "bin", in_path)
 
 state = LineStart()
-line_num = -1
+line_num = 0
 
 def labels_to_addresses(asm_state: AsmState, last_line: int):
     for label_marker in asm_state.label_list:
