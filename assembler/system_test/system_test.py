@@ -20,15 +20,19 @@ import pytest
 expected_dir = "expected/"
 # path to folder with input files
 input_dir = "input/"
+input_err_dir = "input_err/"
 # path to assembler
 assembler_path = "../asm4380.py"
 
 def cmp_output_expected(input_name: str) -> bool:
     return filecmp.cmp(expected_dir + input_name + ".bin", input_dir + input_name + ".bin", shallow=False)
 
-def run_assembler(input_name: str) -> CompletedProcess:
-    args = ["python", assembler_path, input_dir + input_name + ".asm"]
-    return subprocess.run(args)
+def run_assembler(input_name: str, err_input = False) -> CompletedProcess:
+    if err_input:
+        args = ["python", assembler_path, input_err_dir + input_name + ".asm"]
+    else:
+        args = ["python", assembler_path, input_dir + input_name + ".asm"]
+    return subprocess.run(args, capture_output=True, text=True)
 
 def run_and_cmp(file_pair_prefix: str):
     result = run_assembler(file_pair_prefix)
@@ -36,9 +40,28 @@ def run_and_cmp(file_pair_prefix: str):
     assert result.returncode == 0
     assert cmp_output_expected(file_pair_prefix)
 
-def test_directive_in_code_section():
-    result = run_assembler("directive_in_code_section")
+@pytest.mark.parametrize(
+    ["input_err", "line_failure",],
+    [
+        ("directive_in_code_section", 5),
+        ("instruction_at_linestart", 1),
+        ("invalid_escape_char", 6),
+        ("underscore_label_start", 1),
+        ("dollsign_label_start", 2),
+        ('invalid_directive', 4),
+        ("signed_BYT", 1),
+        ("BYT_too_big", 1),
+        ("invalid_instruction", 3),
+        ("missing_operand", 2),
+        ("numeric_too_big", 1),
+        ("extra_directive_line", 1),
+        ("extra_instruction_line", 11)
+    ],
+)
+def test_asm_error_handling(input_err: str, line_failure: int):
+    result = run_assembler(input_err, True)
 
+    assert result.stdout == "Assembler error encountered on line " + str(line_failure) + "!\n"
     assert result.returncode == 2
 
 def test_no_input_file_provided():
@@ -47,7 +70,7 @@ def test_no_input_file_provided():
     assert result.returncode == 1
 
 def test_missing_input_file():
-    result = run_assembler("this_file_doesnt_exist")
+    result = run_assembler("this_file_doesnt_exist", True)
 
     assert result.returncode == 1
 
@@ -71,6 +94,12 @@ def test_byt_integer_directive():
 
 def test_byte_char_directive():
     run_and_cmp("byt_char_directive")
+
+def test_directive_variations():
+    run_and_cmp("directive_variations")
+
+def test_instructions():
+    run_and_cmp("instructions")
 
 # session fixture that deletes all the assembler binary files after the tests run
 @pytest.fixture(scope="session", autouse=True)

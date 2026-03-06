@@ -8,10 +8,10 @@
 from plist import Data
 
 # TODO:
-#  - Write tests for optional Directive Operands
-#  - Write tests that include every instruction
-#  - Write test that include every directive variation
-#  - Test error handling
+#  - [*] Write tests for optional Directive Operands
+#  - [*] Write tests that include every instruction
+#  - [*] Write test that include every directive variation
+#  - [ ] Test error handling
 
 from asm_types import AsmState, AsmLine, AssemblerError, Stage, OperandType, LabelMarker
 
@@ -291,6 +291,11 @@ class Directive(State):
             for i in range(4):
                 asm_state.bytecode.append(int_bytes[i])
         elif dir_type == "BYT":
+            # check for missing operand
+            if line.index >= len(line.line) or line.line[line.index] == ";":
+                asm_state.bytecode.append(0);
+                return LineEnd()
+
             if line.line[line.index] != "#" and line.line[line.index] != "'":
                 return Error()
 
