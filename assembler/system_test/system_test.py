@@ -55,7 +55,8 @@ def run_and_cmp(file_pair_prefix: str):
         ("missing_operand", 2),
         ("numeric_too_big", 1),
         ("extra_directive_line", 1),
-        ("extra_instruction_line", 11)
+        ("extra_instruction_line", 11),
+        ("missing_label", 49)
     ],
 )
 def test_asm_error_handling(input_err: str, line_failure: int):
