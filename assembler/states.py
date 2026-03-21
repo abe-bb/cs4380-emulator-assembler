@@ -304,7 +304,7 @@ class Directive(State):
                 if integer < 0 or integer > 255:
                     return Error()
                 # store bytes
-                int_byte = integer.to_bytes(1)
+                int_byte = integer.to_bytes(1, byteorder="little", signed=False)
                 asm_state.bytecode.append(int_byte[0])
             elif line.line[line.index] == "'":
                 char_byte = parse_char(line)
