@@ -29,9 +29,9 @@ def cmp_output_expected(input_name: str) -> bool:
 
 def run_assembler(input_name: str, err_input = False) -> CompletedProcess:
     if err_input:
-        args = ["python", assembler_path, input_err_dir + input_name + ".asm"]
+        args = ["python3", assembler_path, input_err_dir + input_name + ".asm"]
     else:
-        args = ["python", assembler_path, input_dir + input_name + ".asm"]
+        args = ["python3", assembler_path, input_dir + input_name + ".asm"]
     return subprocess.run(args, capture_output=True, text=True)
 
 def run_and_cmp(file_pair_prefix: str):
@@ -66,7 +66,7 @@ def test_asm_error_handling(input_err: str, line_failure: int):
     assert result.returncode == 2
 
 def test_no_input_file_provided():
-    result = subprocess.run(["python", assembler_path])
+    result = subprocess.run(["python3", assembler_path])
 
     assert result.returncode == 1
 
