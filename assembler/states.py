@@ -5,7 +5,6 @@
 # Instruction | Directive to LineEnd
 #
 # All of them can transition to Error
-from plist import Data
 
 # TODO:
 #  - [*] Write tests for optional Directive Operands
