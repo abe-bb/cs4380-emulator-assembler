@@ -175,8 +175,8 @@ bin_rep = {
 escape_chars = {"t": "\t",  "\\": "\\", "n": "\n", "'": "'", "\"": "\"", "r": "\r", "b": "\b"}
 
 class State:
-    def run(self, asm_state: AsmState, line: AsmLine) -> State:
-        pass
+    def run(self, asm_state: AsmState, line: AsmLine):
+        raise "run() should not be called on the State superclass"
 
 class LineStart(State):
     def run(self, asm_state: AsmState, line: AsmLine):
