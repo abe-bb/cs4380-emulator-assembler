@@ -40,6 +40,18 @@ def run_and_cmp(file_pair_prefix: str):
     assert result.returncode == 0
     assert cmp_output_expected(file_pair_prefix)
 
+@pytest.mark.parametrize("filename",
+                         ["3p1_jmr_instruction",
+                          "3p1_bnz_instruction",
+                          "3p1_bgt_instruction",
+                          "3p1_blt_instruction",
+                          "3p1_brz_instruction"
+                          ],
+                         )
+def test_proj3_p1_jump_instructions(filename: str):
+    run_and_cmp(filename)
+    
+
 @pytest.mark.parametrize(
     ["input_err", "line_failure",],
     [

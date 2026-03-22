@@ -1,0 +1,7 @@
+00000000: 04 00 00 00           # Entry point address (first 4 bytes)
+00000004: 08 08 00 00 0000 0000 # set r8 to 0
+0000000c: 03 08 00 00 0c00 0000 # BNZ to this instruction (but register is 0)
+00000014: 08 08 00 00 0100 0000 # set r8 to 1
+0000001c: 03 08 00 00 2c00 0000 # BNZ to exit instruction
+00000024: 1F 00 00 00 6200 0000 # TRP 98 (should be skipped over)
+0000002c: 1F 00 00 00 0000 0000 # TRP 0 this should execute

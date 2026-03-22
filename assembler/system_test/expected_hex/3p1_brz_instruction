@@ -1,0 +1,9 @@
+00000000: 04 00 00 00           # Entry point address (first 4 bytes)
+00000004: 08 08 00 00 0100 0000 # set r8 to 1
+0000000c: 06 08 00 00 0c00 0000 # BLT to this instruction (but register is 1)
+00000014: 08 08 00 00 ffff ffff # set r8 to -1
+0000001c: 06 08 00 00 1c00 0000 # BLT to this instruction (but register is -1)
+00000024: 08 08 00 00 0000 0000 # set r8 to 0
+0000002c: 06 08 00 00 3c00 0000 # BLT to exit instruction
+00000034: 1F 00 00 00 6200 0000 # TRP 98 (should be skipped over)
+0000003c: 1F 00 00 00 0000 0000 # TRP 0 this should execute
