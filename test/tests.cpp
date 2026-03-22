@@ -97,6 +97,138 @@ TEST(Fetch, BytesPlacedInCtrlRegs) {
   EXPECT_EQ(0xDEADBEEF, cntrl_regs[IMMEDIATE]) << "Immediate value incorrectly loaded";
 }
 
+TEST(JumpTests, JumpBeyondMemoryFails) {
+  initialize_memory(1024);
+  set_immediate(1024);
+  set_operands(R8);
+  reg_file[R8] = 1024;
+
+  unsigned int jump_ops[] = { JMP, JMR, BNZ, BGT, BLT, BRZ };
+
+  for (auto op : jump_ops) {
+    set_operation(op);
+
+    EXPECT_FALSE(execute()) << "Operation: " << op << " did not fail when jumping beyond memory!";
+  }
+}
+
+TEST(JumpTests, JumpToLast7BytesFails) {
+  initialize_memory(1024);
+  set_operands(R8);
+
+  unsigned int jump_ops[] = { JMP, JMR, BNZ, BGT, BLT, BRZ };
+
+  for (auto op : jump_ops) {
+    set_operation(op);
+
+    for (int i = 1; i < 8; i++) {
+      set_immediate(1024 - i);
+      reg_file[R8] = 1024 - i;
+
+      ASSERT_FALSE(execute());
+    }
+  }
+
+}
+
+
+TEST(JumpTests, JMR) {
+  initialize_memory(1024);
+
+  set_operation(JMR);
+  set_operands(R9);
+  reg_file[R9] = 10;
+  
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 10) << "JMR failed to set PC";
+}
+
+TEST(JumpTests, BNZ) {
+  initialize_memory(1024);
+
+  set_operation(BNZ);
+  set_operands(R9);
+  set_immediate(100);
+  reg_file[PC] = 0;
+  reg_file[R9] = 0;
+  
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 0) << "BNZ set PC when register == 0";
+
+
+  reg_file[R9] = 1;
+
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 100) << "BNZ failed to set PC when register == 1";
+}
+
+TEST(JumpTests, BGT) {
+  initialize_memory(1024);
+
+  set_operation(BGT);
+  set_operands(R9);
+  set_immediate(111);
+  reg_file[PC] = 0;
+  reg_file[R9] = (unsigned int) -100;
+  
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 0) << "BGT set PC when register == -100";
+
+
+  reg_file[R9] = 1;
+
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 111) << "BGT failed to set PC when register == 1";
+}
+
+TEST(JumpTests, BLT) {
+  initialize_memory(1024);
+
+  set_operation(BLT);
+  set_operands(R9);
+  set_immediate(112);
+  reg_file[PC] = 0;
+  reg_file[R9] = 0;
+  
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 0) << "BLT set PC when register == 0";
+
+
+  reg_file[R9] = (unsigned int) -1;
+
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 112) << "BLT failed to set PC when register == -1";
+}
+
+TEST(JumpTests, BRZ) {
+  initialize_memory(1024);
+
+  set_operation(BRZ);
+  set_operands(R9);
+  set_immediate(113);
+  reg_file[PC] = 0;
+  reg_file[R9] = 1;
+  
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 0) << "BRZ set PC when register == 1";
+
+
+  reg_file[R9] = 0;
+
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(reg_file[PC], 113) << "BRZ failed to set PC when register == 0";
+}
+
+
 // tests that fetch properly increments PC
 TEST(Fetch, IncrementsPC) {
   init_mem(1024);
@@ -308,40 +440,6 @@ TEST(ExecuteMove, MoviPutsImmediateInRegister) {
 
   ASSERT_EQ(0x45FA78ED, reg_file[R5]) << "MOVI did not store immediate value in the specified register";
 }
-
-// TEST(ExecuteMove, LdaLoadsMemoryToRegister) {
-//   initialize_memory(1024);
-//   set_operation(LDA);
-//   set_operands(R6);
-//   set_immediate(4);
-
-//   prog_mem[4] = 0xAF;
-
-//   EXPECT_TRUE(execute());
-
-//   ASSERT_EQ(0xAF, reg_file[R6]) << "LDA failed to load memory contents to register";
-// }
-
-// TEST(ExecuteMove, LdaFailsBeyondMemory) {
-//   initialize_memory(1024);
-//   set_operation(LDA);
-//   set_operands(R6);
-//   set_immediate(1024);
-
-//   ASSERT_FALSE(execute());
-// }
-
-// TEST(ExecuteMove, LdaFailsLast3Addresses) {
-//   initialize_memory(1024);
-//   set_operation(LDA);
-//   set_operands(R6);
-
-  
-//   for (int i = 3; i<4; i++) {
-//     set_immediate(1024 - i);
-//     ASSERT_FALSE(execute());
-//   }
-// }
 
 TEST(ExecuteMove, LdaPlacesAddressInRegister) {
   initialize_memory(1024);
