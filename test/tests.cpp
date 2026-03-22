@@ -97,6 +97,15 @@ TEST(Fetch, BytesPlacedInCtrlRegs) {
   EXPECT_EQ(0xDEADBEEF, cntrl_regs[IMMEDIATE]) << "Immediate value incorrectly loaded";
 }
 
+TEST(JumpTests, JumpInstructionEnumValues){
+  ASSERT_EQ(1, JMP);
+  ASSERT_EQ(2, JMR);
+  ASSERT_EQ(3, BNZ);
+  ASSERT_EQ(4, BGT);
+  ASSERT_EQ(5, BLT);
+  ASSERT_EQ(6, BRZ);
+}
+
 TEST(JumpTests, JumpBeyondMemoryFails) {
   initialize_memory(1024);
   set_immediate(1024);
