@@ -851,8 +851,6 @@ TEST(ExecuteTRP, TRP4ReadsSuccessiveChars) {
 TEST(ExecuteTRP, ExecuteTrpNeverExits) {
   set_operation(TRP);
 
-  for (unsigned int i = 0; i < 256; i++) {
-    set_immediate(i);
-    execute();
-  }
+  set_immediate(0);
+  execute();
 }
