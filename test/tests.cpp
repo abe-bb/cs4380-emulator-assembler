@@ -270,12 +270,15 @@ TEST(Decode, DoubleDontCareValuesShouldntFail) {
 }
 
 TEST(Decode, TripleDontCareValuesShouldntFail) {
+  initialize_memory(1024);
+  set_immediate(0);
+
   for (auto operation : operations_0operand_3dc) {
     for (unsigned int invalid_operand = 22; invalid_operand < 256; invalid_operand++) {
       set_operation(operation);
       set_operands(invalid_operand, invalid_operand, invalid_operand);
 
-      ASSERT_TRUE(decode()) << "Operation with 3 Don't Care register value caused decode failure";
+      ASSERT_TRUE(decode()) << "Operation: " << operation << " with 3 Don't Care register value caused decode failure";
     }
   }
 }
