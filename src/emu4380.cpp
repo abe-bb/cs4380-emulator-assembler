@@ -103,6 +103,54 @@ bool brz() {
   return true;
 }
 
+bool istr() {
+  auto r_src = cntrl_regs[OPERAND_1];
+  auto r_addr = cntrl_regs[OPERAND_2];
+
+  if (!validate_address(reg_file[r_addr])) {
+    return false;
+  }
+
+  *(unsigned int*)(prog_mem + reg_file[r_addr]) = reg_file[r_src];
+  return true;
+}
+
+bool ildr() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_addr = cntrl_regs[OPERAND_2];
+
+  if (!validate_address(reg_file[r_addr])) {
+    return false;
+  }
+
+  reg_file[r_dest] = *(unsigned int*)(prog_mem + reg_file[r_addr]);
+  return true;
+}
+
+bool istb() {
+  auto r_src = cntrl_regs[OPERAND_1];
+  auto r_addr = cntrl_regs[OPERAND_2];
+
+  if (!validate_address(reg_file[r_addr], 1)) {
+    return false;
+  }
+
+  prog_mem[reg_file[r_addr]] = reg_file[r_src] & 0xFF;
+  return true;
+}
+
+bool ildb() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_addr = cntrl_regs[OPERAND_2];
+
+  if (!validate_address(reg_file[r_addr], 1)) {
+    return false;
+  }
+
+  reg_file[r_dest] = prog_mem[reg_file[r_addr]];
+  return true;
+}
+
 bool mov() {
   auto r_src = cntrl_regs[OPERAND_2];
   auto r_dest = cntrl_regs[OPERAND_1];
@@ -394,7 +442,7 @@ bool decode() {
   // validate operation (1, 7-13, 18-26, 31)
   auto op = cntrl_regs[OPERATION];
   if (!((op >= 1 && op <= 13) ||
-     (op >= 18 && op <= 26) ||
+     (op >= 14 && op <= 26) ||
      (op == 31))) {
     return false;
   }
@@ -453,6 +501,14 @@ bool execute() {
       return blt();
     case BRZ:
       return brz();
+    case ISTR:
+      return istr();
+    case ILDR:
+      return ildr();
+    case ISTB:
+      return istb();
+    case ILDB:
+      return ildb();
     case MOV:
       return mov();
     case MOVI:
@@ -498,7 +554,7 @@ bool execute() {
 // convenience categorization of operations
 std::vector<unsigned int> operations_0operand_3dc = {1, 31};
 std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13, JMR, BNZ, BGT, BLT, BRZ};
-std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26};
+std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26, ISTR, ILDR, ISTB, ILDB};
 std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25};
 
 bool parse_unsigned_int(std::string input, unsigned int &output) {

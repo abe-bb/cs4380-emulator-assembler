@@ -369,7 +369,7 @@ TEST(Decode, InvalidOperationsFail) {
   set_immediate(4);
 
   // list invalid operator values to be tested
-  std::vector<unsigned int> invalid_operations = {0, 14, 15, 16, 17, 27, 28, 29, 30, 32, 33, 55, 100, 200, 255};
+  std::vector<unsigned int> invalid_operations = {0, 27, 28, 29, 30, 32, 33, 55, 100, 200, 255};
 
   // loop over all valid operators and decode them
   for (unsigned int i : invalid_operations) {
@@ -452,10 +452,10 @@ TEST(ExecuteMove, IstrStoresInteger) {
   auto msg = "ISTR failed to properly store int to memory location. mem: 0x";
 
   // test if the value saved correctly in little endian order
-  EXPECT_EQ(0x21, (int)prog_mem[503]) << msg << std::hex << (int)prog_mem[503];
-  EXPECT_EQ(0x43, (int)prog_mem[504]) << msg << std::hex << (int)prog_mem[504];
-  EXPECT_EQ(0x65, (int)prog_mem[505]) << msg << std::hex << (int)prog_mem[505];
-  EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << (int)prog_mem[506];
+  EXPECT_EQ(0x21, (int)prog_mem[503]) << msg << std::hex << prog_mem[503];
+  EXPECT_EQ(0x43, (int)prog_mem[504]) << msg << std::hex << prog_mem[504];
+  EXPECT_EQ(0x65, (int)prog_mem[505]) << msg << std::hex << prog_mem[505];
+  EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << prog_mem[506];
 }
 
 TEST(ExecuteMove, IldrLoadsInteger) {
