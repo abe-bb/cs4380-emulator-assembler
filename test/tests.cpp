@@ -369,7 +369,7 @@ TEST(Decode, InvalidOperationsFail) {
   set_immediate(4);
 
   // list invalid operator values to be tested
-  std::vector<unsigned int> invalid_operations = {0, 27, 28, 29, 30, 32, 33, 55, 100, 200, 255};
+  std::vector<unsigned int> invalid_operations = {0, 27, 28, 32, 33, 55, 100, 200, 255};
 
   // loop over all valid operators and decode them
   for (unsigned int i : invalid_operations) {
@@ -406,6 +406,47 @@ TEST(Decode, InvalidTRPFails) {
 
     ASSERT_FALSE(decode());
   }
+}
+
+TEST(ExecuteCompare, CmpFunctionality) {
+  set_operation(CMP);
+  set_operands(R4, R5, R6);
+
+  reg_file[R4] = 100;
+  reg_file[R5] = -50;
+  reg_file[R6] = -50;
+
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(0, reg_file[R4]) << "operands are equal, should be 0";
+
+  reg_file[R5] = 50;
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(1, reg_file[R4]) << "operands are equal, should be 0";
+
+  reg_file[R5] = -500;
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(-1, reg_file[R4]) << "operands are equal, should be 0";
+}
+
+TEST(ExecuteCompare, CmpiFunctionality) {
+  set_operation(CMPI);
+  set_operands(R4, R5);
+  set_immediate(-50);
+
+  reg_file[R4] = 100;
+  reg_file[R5] = -50;
+  
+
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(0, reg_file[R4]) << "operands are equal, should be 0";
+
+  reg_file[R5] = 50;
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(1, reg_file[R4]) << "operands are equal, should be 0";
+
+  reg_file[R5] = -500;
+  EXPECT_TRUE(execute());
+  EXPECT_EQ(-1, reg_file[R4]) << "operands are equal, should be 0";
 }
 
 TEST(ExecuteFlow, JumpSetsPC) {

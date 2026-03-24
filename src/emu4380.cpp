@@ -439,11 +439,11 @@ bool fetch() {
 // instruction with an RD value of 55 would clearly be a malformed
 // instruction.
 bool decode() {
-  // validate operation (1, 7-13, 18-26, 31)
+  // validate operation (1-26, 29-31)
   auto op = cntrl_regs[OPERATION];
   if (!((op >= 1 && op <= 13) ||
      (op >= 14 && op <= 26) ||
-     (op == 31))) {
+     (op >= 29 && op <= 31))) {
     return false;
   }
 
@@ -554,8 +554,8 @@ bool execute() {
 // convenience categorization of operations
 std::vector<unsigned int> operations_0operand_3dc = {1, 31};
 std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13, JMR, BNZ, BGT, BLT, BRZ};
-std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26, ISTR, ILDR, ISTB, ILDB};
-std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25};
+std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26, ISTR, ILDR, ISTB, ILDB, CMPI};
+std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25, CMP};
 
 bool parse_unsigned_int(std::string input, unsigned int &output) {
   try {
