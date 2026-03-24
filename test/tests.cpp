@@ -436,6 +436,96 @@ TEST(ExecuteFlow, JumpToLast7BytesFails) {
   }
 }
 
+TEST(ExecuteMove, IstrStoresInteger) {
+  initialize_memory(1024);
+  set_operation(ISTR);
+  set_operands(R7, R8);
+
+  // set address
+  reg_file[R8] = 503;
+
+  // set value to be stored
+  reg_file[R7] = 0x87654321;
+
+  EXPECT_TRUE(execute());
+
+  auto msg = "ISTR failed to properly store int to memory location. mem: 0x";
+
+  // test if the value saved correctly in little endian order
+  EXPECT_EQ(0x21, (int)prog_mem[503]) << msg << std::hex << (int)prog_mem[503];
+  EXPECT_EQ(0x43, (int)prog_mem[504]) << msg << std::hex << (int)prog_mem[504];
+  EXPECT_EQ(0x65, (int)prog_mem[505]) << msg << std::hex << (int)prog_mem[505];
+  EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << (int)prog_mem[506];
+}
+
+TEST(ExecuteMove, IldrLoadsInteger) {
+  initialize_memory(1024);
+  set_operation(ILDR);
+  set_operands(R7, R8);
+
+  // set address
+  reg_file[R8] = 503;
+
+  // clear R7
+  reg_file[R7] = 0;
+
+  // set values to load in memory
+  prog_mem[503] = 0x21;
+  prog_mem[504] = 0x43;
+  prog_mem[505] = 0x65;
+  prog_mem[506] = 0x87;
+
+
+  EXPECT_TRUE(execute());
+
+  auto msg = "ILDR failed to properly load int from memory location\n";
+
+  // test if the value saved correctly in little endian order
+  ASSERT_EQ(0x87654321, reg_file[R7]) << msg;
+}
+
+TEST(ExecuteMove, IstbStoresByte) {
+  initialize_memory(1024);
+  set_operation(ISTB);
+  set_operands(R7, R8);
+
+  // set address
+  reg_file[R8] = 509;
+
+  // set value to be stored
+  reg_file[R7] = 0xAC;
+
+  EXPECT_TRUE(execute());
+
+  auto msg = "ISTB failed to properly store byte to memory location\n";
+
+  // test if the value saved correctly in little endian order
+  EXPECT_EQ(0xAC, prog_mem[509]) << msg;
+}
+
+TEST(ExecuteMove, IldbLoadsByte) {
+  initialize_memory(1024);
+  set_operation(ILDB);
+  set_operands(R7, R8);
+
+  // set address
+  reg_file[R8] = 510;
+
+  // clear R7
+  reg_file[R7] = 0;
+
+  // set values to load in memory
+  prog_mem[510] = 0xAD;
+
+
+  EXPECT_TRUE(execute());
+
+  auto msg = "ILDB failed to properly load byte from memory location\n";
+
+  // test if the value saved correctly in little endian order
+  ASSERT_EQ(0xAD, reg_file[R7]) << msg;
+}
+
 TEST(ExecuteMove, MovCopiesContents) {
   set_operation(MOV);
   set_operands(R1, R2);
