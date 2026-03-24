@@ -319,6 +319,40 @@ bool divi() {
   return true;
 }
 
+bool cmp() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  signed int s1 = reg_file[cntrl_regs[OPERAND_2]];
+  signed int s2 = reg_file[cntrl_regs[OPERAND_3]];
+
+  if (s1 == s2) {
+    reg_file[r_dest] = 0;
+  }
+  else if (s1 > s2) {
+    reg_file[r_dest] = 1;
+  }
+  else {
+    reg_file[r_dest] = -1;
+  }
+  return true;
+}
+
+bool cmpi() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  signed int s1 = reg_file[cntrl_regs[OPERAND_2]];
+  signed int s2 = cntrl_regs[IMMEDIATE];
+
+  if (s1 == s2) {
+    reg_file[r_dest] = 0;
+  }
+  else if (s1 > s2) {
+    reg_file[r_dest] = 1;
+  }
+  else {
+    reg_file[r_dest] = -1;
+  }
+  return true;
+}
+
 bool trp0() {
   flag = TERMINATE;
   return true;
@@ -541,6 +575,10 @@ bool execute() {
       return sdiv();
     case DIVI:
       return divi();        
+    case CMP:
+      return cmp();
+    case CMPI:
+      return cmpi();
     case TRP:
       return trp();
     default:
