@@ -140,7 +140,6 @@ TEST(JumpTests, JumpToLast7BytesFails) {
 
 }
 
-
 TEST(JumpTests, JMR) {
   initialize_memory(1024);
 
@@ -343,11 +342,17 @@ TEST(Decode, ValidOperandsSucceed) {
 
 // iterate through all valid operations and ensure that they all decode successfully
 TEST(Decode, ValidOperationsSucceed) {
+  initialize_memory(1024);
   set_operands(R0, R1, R2);
   set_immediate(4);
 
   // list valid operator values
-  std::vector<unsigned int> valid_operations = {1, 7, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31};
+  std::vector<unsigned int> valid_operations = std::vector<unsigned int>();
+  valid_operations.insert(valid_operations.end(), operations_0operand_3dc.begin(), operations_0operand_3dc.end());
+  valid_operations.insert(valid_operations.end(), operations_1operand_2dc.begin(), operations_1operand_2dc.end());
+  valid_operations.insert(valid_operations.end(), operations_2operand_1dc.begin(), operations_2operand_1dc.end());
+  valid_operations.insert(valid_operations.end(), operations_3operand_0dc.begin(), operations_3operand_0dc.end());
+
 
   // loop over all valid operators and decode them
   for (unsigned int i : valid_operations) {
@@ -364,7 +369,7 @@ TEST(Decode, InvalidOperationsFail) {
   set_immediate(4);
 
   // list invalid operator values to be tested
-  std::vector<unsigned int> invalid_operations = {0, 2, 3, 4, 5, 6, 14, 15, 16, 17, 27, 28, 29, 30, 32, 33, 55, 100, 200, 255};
+  std::vector<unsigned int> invalid_operations = {0, 14, 15, 16, 17, 27, 28, 29, 30, 32, 33, 55, 100, 200, 255};
 
   // loop over all valid operators and decode them
   for (unsigned int i : invalid_operations) {

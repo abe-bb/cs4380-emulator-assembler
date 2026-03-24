@@ -26,6 +26,83 @@ bool jmp() {
   return true;
 }
 
+
+bool jmr() {
+  auto dest = cntrl_regs[OPERAND_1];
+
+  // can't jump to the last 7 bytes of program memory (or beyond)
+  if (!validate_address(reg_file[dest], 8)) {
+    return false;
+  }
+
+  reg_file[PC] = reg_file[dest];
+  return true;
+}
+
+bool bnz() {
+  auto condition = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  // can't jump to the last 7 bytes of program memory (or beyond)
+  if (!validate_address(address, 8)) {
+    return false;
+  }
+
+  // check condition
+  if ((int)reg_file[condition] != 0) {
+    reg_file[PC] = address;
+  }
+  return true;
+}
+
+bool bgt() {
+  auto condition = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  // can't jump to the last 7 bytes of program memory (or beyond)
+  if (!validate_address(address, 8)) {
+    return false;
+  }
+
+  // check condition
+  if ((int)reg_file[condition] > 0) {
+    reg_file[PC] = address;
+  }
+  return true;
+}
+
+bool blt() {
+  auto condition = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  // can't jump to the last 7 bytes of program memory (or beyond)
+  if (!validate_address(address, 8)) {
+    return false;
+  }
+
+  // check condition
+  if ((int)reg_file[condition] < 0) {
+    reg_file[PC] = address;
+  }
+  return true;
+}
+
+bool brz() {
+  auto condition = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  // can't jump to the last 7 bytes of program memory (or beyond)
+  if (!validate_address(address, 8)) {
+    return false;
+  }
+
+  // check condition
+  if ((int)reg_file[condition] == 0) {
+    reg_file[PC] = address;
+  }
+  return true;
+}
+
 bool mov() {
   auto r_src = cntrl_regs[OPERAND_2];
   auto r_dest = cntrl_regs[OPERAND_1];
@@ -316,10 +393,9 @@ bool fetch() {
 bool decode() {
   // validate operation (1, 7-13, 18-26, 31)
   auto op = cntrl_regs[OPERATION];
-  if (!(op == 1 ||
-     (op >= 7 && op <= 13) ||
+  if (!((op >= 1 && op <= 13) ||
      (op >= 18 && op <= 26) ||
-      op == 31)) {
+     (op == 31))) {
     return false;
   }
 
@@ -357,7 +433,7 @@ bool decode() {
   if (std::find(begin, end, op) != end) {
     op3 = R0;
   }
-  // all 3 operations are cared about, so don't ignore any oeprands
+  // all 3 operations are cared about, so don't ignore any operands
 
   // valdiate operands and return
   return op1 <= 21 && op2 <= 21 && op3 <= 21;
@@ -367,6 +443,16 @@ bool execute() {
   switch(cntrl_regs[OPERATION]) {
     case JMP:
       return jmp();
+    case JMR:
+      return jmr();
+    case BNZ:
+      return bnz();
+    case BGT:
+      return bgt();
+    case BLT:
+      return blt();
+    case BRZ:
+      return brz();
     case MOV:
       return mov();
     case MOVI:
@@ -411,7 +497,7 @@ bool execute() {
 
 // convenience categorization of operations
 std::vector<unsigned int> operations_0operand_3dc = {1, 31};
-std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13};
+std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13, JMR, BNZ, BGT, BLT, BRZ};
 std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26};
 std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25};
 
