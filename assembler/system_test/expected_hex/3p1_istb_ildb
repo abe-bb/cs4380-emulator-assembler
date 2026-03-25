@@ -1,6 +1,6 @@
 00000000: 04 00 00 00           # Entry point address (first 4 bytes)
-00000004: 08 08 00 00 B29E 43FF # set r8 to 97 ('a')
-0000000c: 08 08 00 00 1000 0000 # set r2 to 16
+00000004: 08 08 00 00 6100 0000 # set r8 to 97 ('a')
+0000000c: 08 02 00 00 1000 0000 # set r2 to 16
 00000014: 10 08 02 00 0000 0000 # ISTB R8 R2 (store R8 at R2 address)
 0000001c: 11 03 02 00 0000 0000 # ILDB R3 R2 (load byte at R2 address into R3)
 00000024: 1F 00 00 00 0100 0000 # TRP 3

@@ -149,6 +149,10 @@ inst_operands = {
     "LDR": reg1_immed,
     "STB": reg1_immed,
     "LDB": reg1_immed,
+    "ISTR": reg2,
+    "ILDR": reg2,
+    "ISTB": reg2,
+    "ILDB": reg2,
     "ADD": reg3,
     "ADDI": reg2_immed,
     "SUB": reg3,
@@ -168,7 +172,7 @@ valid_registers = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "
 bin_rep = {
     # instructions
     "JMP": 1, "JMR": 2, "BNZ": 3, "BGT": 4, "BLT": 5, "BRZ": 6, "MOV": 7, "MOVI": 8, "LDA": 9, "STR": 10, "LDR": 11,
-    "STB": 12, "LDB": 13, "ADD": 18, "ADDI": 19,
+    "STB": 12, "LDB": 13, "ISTR": 14, "ILDR": 15, "ISTB": 16, "ILDB": 17, "ADD": 18, "ADDI": 19,
     "SUB": 20, "SUBI": 21, "MUL": 22, "MULI": 23, "DIV": 24, "SDIV": 25, "DIVI": 26, "TRP": 31,
     # registers
     "R0": 0, "R1": 1, "R2": 2, "R3": 3, "R4": 4, "R5": 5, "R6": 6, "R7": 7, "R8": 8, "R9": 9, "R10": 10, "R11": 11,
