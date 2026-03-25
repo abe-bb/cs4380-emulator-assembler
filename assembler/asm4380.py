@@ -29,7 +29,7 @@ try:
         asm_state = AsmState()
         for line in in_file:
             line_num += 1
-            asm_line = AsmLine(line[0:-1], line_num)
+            asm_line = AsmLine(line.strip("\n"), line_num)
 
             state = LineStart()
 
