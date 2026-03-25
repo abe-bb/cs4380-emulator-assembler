@@ -1159,3 +1159,46 @@ TEST(PeerTest, TestCmpiInstruction) {
 
     EXPECT_EQ(static_cast<int>(reg_file[R3]), -1);
 }
+
+//MOVI test
+TEST(PeerTest, MOVIInstruction) {
+    initialize_memory(1024);
+    cntrl_regs[OPERATION]=MOVI;
+    cntrl_regs[OPERAND_1]=R1;
+    cntrl_regs[IMMEDIATE]=42;
+    ASSERT_TRUE(execute());
+    ASSERT_EQ(reg_file[R1], 42);
+}
+
+//ADD test
+TEST(PeerTest, ADDInstruction) {
+    initialize_memory(1024);
+    reg_file[R1]=10;
+    reg_file[R2]=5;
+    cntrl_regs[OPERATION]=ADD;
+    cntrl_regs[OPERAND_1]=R3;
+    cntrl_regs[OPERAND_2]=R1;
+    cntrl_regs[OPERAND_3]=R2;
+    ASSERT_TRUE(execute());
+    ASSERT_EQ(reg_file[R3], 15);
+}
+
+//SUB instruction
+TEST(PeerTest, SUBInstruction) {
+    initialize_memory(1024);
+    reg_file[R1]=10;
+    reg_file[R2]=3;
+    cntrl_regs[OPERATION]=SUB;
+    cntrl_regs[OPERAND_1]=R3;
+    cntrl_regs[OPERAND_2]=R1;
+    cntrl_regs[OPERAND_3]=R2;
+    ASSERT_TRUE(execute());
+    ASSERT_EQ(reg_file[R3], 7);
+}
+//TRP halt test
+TEST(PeerTest, TRP0Halts) {
+    initialize_memory(1024);
+    cntrl_regs[OPERATION]=TRP;
+    cntrl_regs[IMMEDIATE]=0;
+    ASSERT_TRUE(execute());
+}
