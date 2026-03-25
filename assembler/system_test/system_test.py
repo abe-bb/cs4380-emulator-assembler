@@ -45,7 +45,9 @@ def run_and_cmp(file_pair_prefix: str):
                           "3p1_bnz_instruction",
                           "3p1_bgt_instruction",
                           "3p1_blt_instruction",
-                          "3p1_brz_instruction"
+                          "3p1_brz_instruction",
+                          "3p1_istr_ildr",
+                          "3p1_istb_ildb"
                           ],
                          )
 def test_proj3_p1_jump_instructions(filename: str):

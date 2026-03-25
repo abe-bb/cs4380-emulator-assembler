@@ -1,0 +1,7 @@
+00000000: 04 00 00 00           # Entry point address (first 4 bytes)
+00000004: 08 08 00 00 B29E 43FF # set r6 to -12345678
+0000000c: 08 08 00 00 0800 0000 # set r2 to 8
+00000014: 0E 08 02 00 0000 0000 # ISTR R8 R2 (store R8 at R2 address)
+0000001c: 0F 03 02 00 0000 0000 # ILDR R3 R2 (load int at R2 address into R3)
+00000024: 1F 00 00 00 0100 0000 # TRP 1 
+0000002c: 1F 00 00 00 0000 0000 # TRP 0

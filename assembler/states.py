@@ -7,10 +7,6 @@
 # All of them can transition to Error
 
 # TODO:
-#  - [*] Write tests for optional Directive Operands
-#  - [*] Write tests that include every instruction
-#  - [*] Write test that include every directive variation
-#  - [ ] Test error handling
 
 from asm_types import AsmState, AsmLine, AssemblerError, Stage, OperandType, LabelMarker
 
@@ -133,6 +129,7 @@ def increment_index(line: AsmLine, allow_eol=False):
         raise AssemblerError(line.line_num)
 
 # define required components per instruction
+reg1 = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.DC_I, 0]
 reg2 = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.DC_I, 1]
 reg3 = [OperandType.Register, OperandType.Register, OperandType.Register, OperandType.DC_I, 2]
 reg1_immed = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.Immediate, 1]
@@ -140,6 +137,11 @@ reg2_immed = [OperandType.Register, OperandType.Register, OperandType.DC, Operan
 immed = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.Immediate, 0]
 inst_operands = {
     "JMP": immed,
+    "JMR": reg1,
+    "BNZ": reg1_immed,
+    "BGT": reg1_immed,
+    "BLT": reg1_immed,
+    "BRZ": reg1_immed,
     "MOV": reg2,
     "MOVI": reg1_immed,
     "LDA": reg1_immed,
@@ -165,7 +167,8 @@ valid_registers = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "
 # define binary representations
 bin_rep = {
     # instructions
-    "JMP": 1, "MOV": 7, "MOVI": 8, "LDA": 9, "STR": 10, "LDR": 11, "STB": 12, "LDB": 13, "ADD": 18, "ADDI": 19,
+    "JMP": 1, "JMR": 2, "BNZ": 3, "BGT": 4, "BLT": 5, "BRZ": 6, "MOV": 7, "MOVI": 8, "LDA": 9, "STR": 10, "LDR": 11,
+    "STB": 12, "LDB": 13, "ADD": 18, "ADDI": 19,
     "SUB": 20, "SUBI": 21, "MUL": 22, "MULI": 23, "DIV": 24, "SDIV": 25, "DIVI": 26, "TRP": 31,
     # registers
     "R0": 0, "R1": 1, "R2": 2, "R3": 3, "R4": 4, "R5": 5, "R6": 6, "R7": 7, "R8": 8, "R9": 9, "R10": 10, "R11": 11,
