@@ -24,21 +24,28 @@ input_err_dir = "input_err/"
 # path to assembler
 assembler_path = "../asm4380.py"
 
-def cmp_output_expected(input_name: str) -> bool:
-    return filecmp.cmp(expected_dir + input_name + ".bin", input_dir + input_name + ".bin", shallow=False)
+def cmp_output_expected(input_name: str, input_directory: str = input_dir, expected_directory: str = expected_dir) -> bool:
+    return filecmp.cmp(expected_directory + input_name + ".bin", input_directory + input_name + ".bin", shallow=False)
 
-def run_assembler(input_name: str, err_input = False) -> CompletedProcess:
-    if err_input:
-        args = ["python3", assembler_path, input_err_dir + input_name + ".asm"]
-    else:
-        args = ["python3", assembler_path, input_dir + input_name + ".asm"]
+def run_assembler(input_name: str, input_directory: str = input_dir) -> CompletedProcess:
+    args = ["python3", assembler_path, input_directory + input_name + ".asm"]
     return subprocess.run(args, capture_output=True, text=True)
 
-def run_and_cmp(file_pair_prefix: str):
-    result = run_assembler(file_pair_prefix)
+def run_and_cmp(file_pair_prefix: str, input_directory: str = input_dir, expected_directory: str = expected_dir):
+    result = run_assembler(file_pair_prefix, input_directory)
 
     assert result.returncode == 0
-    assert cmp_output_expected(file_pair_prefix)
+    assert cmp_output_expected(file_pair_prefix, input_directory, expected_directory)
+
+@pytest.mark.parametrize("filename", [
+    "cmp",
+    "cmpi",
+    "jmr",
+    "ld-str-byt",
+    "ld-str-int"
+])
+def test_peer_tests(filename: str):
+    run_and_cmp(filename, "peer_input/", "peer_expected/")
 
 @pytest.mark.parametrize("filename",
                          ["3p1_jmr_instruction",
@@ -74,7 +81,7 @@ def test_proj3_p1_jump_instructions(filename: str):
     ],
 )
 def test_asm_error_handling(input_err: str, line_failure: int):
-    result = run_assembler(input_err, True)
+    result = run_assembler(input_err, input_err_dir)
 
     assert result.stdout == "Assembler error encountered on line " + str(line_failure) + "!\n"
     assert result.returncode == 2
@@ -85,7 +92,7 @@ def test_no_input_file_provided():
     assert result.returncode == 1
 
 def test_missing_input_file():
-    result = run_assembler("this_file_doesnt_exist", True)
+    result = run_assembler("this_file_doesnt_exist", input_err_dir)
 
     assert result.returncode == 1
 
@@ -125,3 +132,7 @@ def clean_binary_outputs():
     for file_name in listdir(input_dir):
         if file_name.endswith(".bin"):
             os.remove(input_dir + file_name)
+
+    for file_name in listdir("peer_input/"):
+        if file_name.endswith(".bin"):
+            os.remove("peer_input/" + file_name)

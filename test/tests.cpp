@@ -993,3 +993,169 @@ TEST(ExecuteTRP, ExecuteTrpNeverExits) {
   set_immediate(0);
   execute();
 }
+
+// ISTR
+TEST(PeerTest, TestIstrInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = 0xAABBCCDD;
+    reg_file[R2] = 100;
+
+    cntrl_regs[OPERATION] = ISTR;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(prog_mem[100], 0xDD);
+    EXPECT_EQ(prog_mem[101], 0xCC);
+    EXPECT_EQ(prog_mem[102], 0xBB);
+    EXPECT_EQ(prog_mem[103], 0xAA);
+}
+
+// ILDR
+TEST(PeerTest, TestIldrInstruction) {
+    initialize_memory(1024);
+    prog_mem[200] = 0x11;
+    prog_mem[201] = 0x22;
+    prog_mem[202] = 0x33;
+    prog_mem[203] = 0x44;
+    reg_file[R2] = 200;
+
+    cntrl_regs[OPERATION] = ILDR;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[R1], 0x44332211u);
+}
+
+// ISTB
+TEST(PeerTest, TestIstbInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = 0xAABBCCDD;
+    reg_file[R2] = 300;
+
+    cntrl_regs[OPERATION] = ISTB;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(prog_mem[300], 0xDD);
+}
+
+// ILDB
+TEST(PeerTest, TestIldbInstruction) {
+    initialize_memory(1024);
+    prog_mem[400] = 0xAB;
+    reg_file[R2] = 400;
+
+    cntrl_regs[OPERATION] = ILDB;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[R1], 0xABu);
+}
+
+// JMR
+TEST(PeerTest, TestJmrInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = 256;
+
+    cntrl_regs[OPERATION] = JMR;
+    cntrl_regs[OPERAND_1] = R1;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[PC], 256u);
+}
+
+// BNZ
+TEST(PeerTest, TestBnzInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = 5;
+
+    cntrl_regs[OPERATION] = BNZ;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[IMMEDIATE] = 300;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[PC], 300u);
+}
+
+// BGT
+TEST(PeerTest, TestBgtInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = static_cast<unsigned int>(10);
+
+    cntrl_regs[OPERATION] = BGT;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[IMMEDIATE] = 400;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[PC], 400u);
+}
+
+// BLT
+TEST(PeerTest, TestBltInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = static_cast<unsigned int>(-3);
+
+    cntrl_regs[OPERATION] = BLT;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[IMMEDIATE] = 500;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[PC], 500u);
+}
+
+// BRZ
+TEST(PeerTest, TestBrzInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = 0;
+
+    cntrl_regs[OPERATION] = BRZ;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[IMMEDIATE] = 600;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[PC], 600u);
+}
+
+// CMP
+TEST(PeerTest, TestCmpInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = static_cast<unsigned int>(10);
+    reg_file[R2] = static_cast<unsigned int>(5);
+
+    cntrl_regs[OPERATION] = CMP;
+    cntrl_regs[OPERAND_1] = R3;
+    cntrl_regs[OPERAND_2] = R1;
+    cntrl_regs[OPERAND_3] = R2;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(static_cast<int>(reg_file[R3]), 1);
+}
+
+// CMPI
+TEST(PeerTest, TestCmpiInstruction) {
+    initialize_memory(1024);
+    reg_file[R1] = static_cast<unsigned int>(5);
+
+    cntrl_regs[OPERATION] = CMPI;
+    cntrl_regs[OPERAND_1] = R3;
+    cntrl_regs[OPERAND_2] = R1;
+    cntrl_regs[IMMEDIATE] = 10;
+
+    EXPECT_TRUE(execute());
+
+    EXPECT_EQ(static_cast<int>(reg_file[R3]), -1);
+}
