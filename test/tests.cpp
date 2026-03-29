@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include <cstdint>
+#include <cstdlib>
 #include <gtest/gtest.h>
 #include <vector>
 #include <iostream>
@@ -95,6 +96,72 @@ TEST(Fetch, BytesPlacedInCtrlRegs) {
   EXPECT_EQ(0x04, cntrl_regs[OPERAND_2]) << "Operand 2 value incorreclty loaded";
   EXPECT_EQ(0x08, cntrl_regs[OPERAND_3]) << "Operand 3 value incorrectly loaded";
   EXPECT_EQ(0xDEADBEEF, cntrl_regs[IMMEDIATE]) << "Immediate value incorrectly loaded";
+}
+
+TEST(MemTests, ReadByteTests) {
+  auto mem_size = 1024;
+  initialize_memory(mem_size);
+  auto mem_cntr_before = mem_cycle_cntr;
+
+  for (auto addr = 0; addr < mem_size; addr++) {
+    unsigned char mem = rand();
+    prog_mem[addr] = mem;
+
+    auto result = readByte(addr);
+
+    ASSERT_EQ(mem, result);
+  }
+
+  ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
+}
+
+TEST(MemTests, ReadWordTests) {
+  auto mem_size = 1024;
+  initialize_memory(mem_size);
+  auto mem_cntr_before = mem_cycle_cntr;
+
+  for (auto addr = 0; addr < mem_size - 3; addr++) {
+    unsigned int mem = rand();
+    *(unsigned int*)(prog_mem + addr) = mem;
+
+    auto result = readWord(addr);
+
+    ASSERT_EQ(mem, result);
+  }
+
+  ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
+}
+
+TEST(MemTests, WriteByteTests) {
+  auto mem_size = 1024;
+  initialize_memory(mem_size);
+  auto mem_cntr_before = mem_cycle_cntr;
+
+  for (auto addr = 0; addr < mem_size; addr++) {
+    unsigned char mem = rand();
+    writeByte(addr, mem);
+
+    auto result = prog_mem[addr];
+    ASSERT_EQ(mem, result);
+  }
+
+  ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
+}
+
+TEST(MemTests, WriteWordTests) {
+  auto mem_size = 1024;
+  initialize_memory(mem_size);
+  auto mem_cntr_before = mem_cycle_cntr;
+
+  for (auto addr = 0; addr < mem_size - 3; addr++) {
+    unsigned int mem = rand();
+    writeWord(addr, mem);
+
+    auto result = *(unsigned int*)(prog_mem + addr);
+    ASSERT_EQ(mem, result);
+  }
+
+  ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
 }
 
 TEST(JumpTests, JumpInstructionEnumValues){

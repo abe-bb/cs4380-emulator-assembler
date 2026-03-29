@@ -10,10 +10,32 @@ unsigned int reg_file[22] = {0};
 unsigned char* prog_mem = 0;
 unsigned int cntrl_regs[5] = {0};
 
+unsigned int mem_cycle_cntr = 0;
+
 PostOpFlag flag = NOTHING;
 
 bool validate_address(unsigned int address, unsigned int size = 4) {
   return address <= MEM_SIZE - size;
+}
+
+unsigned char readByte(unsigned int address) {
+  mem_cycle_cntr += 8;
+  return prog_mem[address];
+}
+
+unsigned int readWord(unsigned int address) {
+  mem_cycle_cntr += 8;
+  return *(unsigned int*)(prog_mem + address);
+}
+
+void writeByte(unsigned int address, unsigned char byte) {
+  mem_cycle_cntr += 8;
+  prog_mem[address] = byte;
+}
+
+void writeWord(unsigned int address, unsigned int word) {
+  mem_cycle_cntr += 8;
+  *(unsigned int*)(prog_mem + address) = word;
 }
 
 bool jmp() {
