@@ -25,6 +25,15 @@ target_link_libraries(
 )
 
 add_executable(
+  runAllTests
+  test/tests.cpp src/emu4380.cpp test/cache_tests.cpp src/cache.cpp 
+)
+target_link_libraries(
+  runAllTests
+  GTest::gtest_main
+)
+
+add_executable(
   emu4380
   src/emu4380.cpp src/main.cpp src/cache.cpp
 )
