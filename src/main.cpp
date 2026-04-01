@@ -14,9 +14,7 @@ void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
 
     init_mem(mem_size);
 
-    // copy program to memory. I would love to combine this step with
-    // init_mem, but the spec says init_mem must initialze prog_mem
-    // separately so I can't.
+    // copy program to memory
     for (unsigned int i = 0; i < program.size(); i++) {
         prog_mem[i] = program[i];
     }
@@ -31,6 +29,7 @@ void emulator_error(unsigned int instruction_addr) {
 }
 
 void cleanup() {
+    std::cout << "Execution completed. Total memory cycles: " << mem_cycle_cntr << "\n";
     std::cout << std::flush;
 }
 
@@ -76,6 +75,7 @@ int main(int argc, char* argv[]) {
 
     // read in second argument as memory size
     unsigned int mem_size = 0b1 << 17;
+    unsigned int cache_config = 0;
     if (argc >= 3) {
         std::string in_mem_size = argv[2];
 

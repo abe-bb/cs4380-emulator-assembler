@@ -133,7 +133,7 @@ bool istr() {
     return false;
   }
 
-  *(unsigned int*)(prog_mem + reg_file[r_addr]) = reg_file[r_src];
+  writeWord(reg_file[r_addr], reg_file[r_src]);
   return true;
 }
 
@@ -145,7 +145,7 @@ bool ildr() {
     return false;
   }
 
-  reg_file[r_dest] = *(unsigned int*)(prog_mem + reg_file[r_addr]);
+  reg_file[r_dest] = readWord(reg_file[r_addr]);
   return true;
 }
 
@@ -157,7 +157,7 @@ bool istb() {
     return false;
   }
 
-  prog_mem[reg_file[r_addr]] = reg_file[r_src] & 0xFF;
+  writeByte(reg_file[r_addr], reg_file[r_src] & 0xFF);
   return true;
 }
 
@@ -169,7 +169,7 @@ bool ildb() {
     return false;
   }
 
-  reg_file[r_dest] = prog_mem[reg_file[r_addr]];
+  reg_file[r_dest] = readByte(reg_file[r_addr]);
   return true;
 }
 
@@ -204,7 +204,7 @@ bool str() {
     return false;
   }
 
-  *(unsigned int*)(prog_mem + address) = reg_file[r_src];
+  writeWord(address, reg_file[r_src]);
   return true;
 }
 
@@ -216,7 +216,7 @@ bool ldr() {
     return false;
   }
 
-  reg_file[r_dest] = *(unsigned int*)(prog_mem + address);
+  reg_file[r_dest] = readWord(address);
   return true;
 }
 
@@ -228,7 +228,7 @@ bool stb() {
     return false;
   }
 
-  prog_mem[address] = (unsigned char)(reg_file[r_src] & 0x000000FF);
+  writeByte(address, reg_file[r_src] & 0xFF);
   return true;
 }
 
@@ -240,7 +240,7 @@ bool ldb() {
     return false;
   }
 
-  reg_file[r_dest] = prog_mem[address];
+  reg_file[r_dest] = readByte(address);
   return true;
 }
 
@@ -476,12 +476,13 @@ bool fetch() {
   auto load_addr = reg_file[PC];
 
   // load memory into control registers
-  cntrl_regs[OPERATION] = prog_mem[load_addr];
-  cntrl_regs[OPERAND_1] = prog_mem[load_addr + 1];
-  cntrl_regs[OPERAND_2] = prog_mem[load_addr + 2];
-  cntrl_regs[OPERAND_3] = prog_mem[load_addr + 3];
+  unsigned int ops = readWord(load_addr);
+  cntrl_regs[OPERATION] = ops & 0xFF;
+  cntrl_regs[OPERAND_1] = (ops & 0xFF00) >> 8;
+  cntrl_regs[OPERAND_2] = (ops & 0xFF0000) >> 16;
+  cntrl_regs[OPERAND_3] = (ops & 0xFF000000) >> 24;
   // cast to unsigned int pointer and dereference (assumes little endian environment)
-  cntrl_regs[IMMEDIATE] = *(unsigned int*)(prog_mem + load_addr + 4);
+  cntrl_regs[IMMEDIATE] = readWord(load_addr + 4);
                           
   // increment PC and return true
   reg_file[PC] += 8;
