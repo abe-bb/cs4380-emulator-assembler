@@ -17,7 +17,7 @@ enable_testing()
 
 add_executable(
   runTests
-  test/tests.cpp include/emu4380.h src/emu4380.cpp 
+  test/tests.cpp src/emu4380.cpp src/cache.cpp
 )
 target_link_libraries(
   runTests
@@ -26,5 +26,5 @@ target_link_libraries(
 
 add_executable(
   emu4380
-  src/emu4380.cpp src/main.cpp
+  src/emu4380.cpp src/main.cpp src/cache.cpp
 )

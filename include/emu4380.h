@@ -2,6 +2,9 @@
 
 #include <string>
 #include <vector>
+
+#include "../include/cache.h"
+
 extern unsigned int MEM_SIZE;
 
 extern unsigned int reg_file[22];
@@ -9,6 +12,8 @@ extern unsigned char* prog_mem;
 extern unsigned int cntrl_regs[5];
 
 extern unsigned int mem_cycle_cntr;
+
+extern Cache cache;
 
 enum RegNames { R0=0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10,
   R11, R12, R13, R14, R15, PC, SL, SB, SP, FP, HP };
@@ -25,6 +30,7 @@ enum PostOpFlag {
 extern PostOpFlag flag;
 
 bool init_mem(unsigned int size);
+void init_cache(unsigned int cacheType);
 
 bool fetch();
 bool decode();

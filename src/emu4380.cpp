@@ -1,4 +1,6 @@
 #include "../include/emu4380.h"
+#include "../include/cache.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <iostream>
@@ -12,6 +14,8 @@ unsigned int cntrl_regs[5] = {0};
 
 unsigned int mem_cycle_cntr = 0;
 
+Cache cache = Cache(nullptr);
+
 PostOpFlag flag = NOTHING;
 
 bool validate_address(unsigned int address, unsigned int size = 4) {
@@ -19,23 +23,23 @@ bool validate_address(unsigned int address, unsigned int size = 4) {
 }
 
 unsigned char readByte(unsigned int address) {
-  mem_cycle_cntr += 8;
-  return prog_mem[address];
+  unsigned char byte;
+  mem_cycle_cntr += cache.readByte(address, byte);
+  return byte;
 }
 
 unsigned int readWord(unsigned int address) {
-  mem_cycle_cntr += 8;
-  return *(unsigned int*)(prog_mem + address);
+  unsigned int word;
+  mem_cycle_cntr += cache.readWord(address, word);
+  return word;
 }
 
 void writeByte(unsigned int address, unsigned char byte) {
-  mem_cycle_cntr += 8;
-  prog_mem[address] = byte;
+  mem_cycle_cntr += cache.writeByte(address, byte);
 }
 
 void writeWord(unsigned int address, unsigned int word) {
-  mem_cycle_cntr += 8;
-  *(unsigned int*)(prog_mem + address) = word;
+  mem_cycle_cntr += cache.writeWord(address, word);
 }
 
 bool jmp() {
@@ -460,6 +464,17 @@ bool init_mem(unsigned int size) {
   prog_mem = new unsigned char[size];
   MEM_SIZE = size;
   return true;
+}
+
+// must be called after init_mem and before any memory access functions
+// are called
+void init_cache(unsigned int cacheType) {
+  if (cacheType == 0) {
+    cache = Cache(prog_mem);
+  }
+  else {
+    throw "init_cache called with unknown cache type!";
+  }
 }
 
 // bool fetch(); // Retrieves the bytes for the current instruction and places

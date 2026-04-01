@@ -7,13 +7,6 @@
 
 #include "../include/emu4380.h"
 
-// helper function for initializing memory
-void initialize_memory(unsigned int size = 131072) {
-// not sure if MEM_SIZE needs to be set by me, but whatever
-  MEM_SIZE = size;
-  init_mem(MEM_SIZE);
-}
-
 // helper function for setting control register operands
 void set_operands(unsigned int operand1, unsigned int operand2 = R0, unsigned int operand3 = R0) {
   cntrl_regs[OPERAND_1] = operand1;
@@ -32,7 +25,8 @@ void set_immediate(unsigned int immediate) {
 }
 
 TEST(Setup, TestMemoryInit) {
-  initialize_memory();
+  init_mem(1024);
+  init_cache(0);
 
   for(unsigned int i = 0; i < MEM_SIZE; i++) {
     ASSERT_EQ(prog_mem[i], 0);
@@ -41,13 +35,15 @@ TEST(Setup, TestMemoryInit) {
 
 // out of bounds memory fetch should fail
 TEST(Fetch, OutOfBoundsAddressFails) {
-  initialize_memory();
+  init_mem(1024);
+  init_cache(0);
   reg_file[PC] = MEM_SIZE + 1;
   ASSERT_FALSE(fetch());
 }
 
 TEST(Fetch, Last7BytesFetchFails) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   for (int i = 1; i < 8; i++) {
     reg_file[PC] = MEM_SIZE - i;
     ASSERT_FALSE(fetch()) << "fetch succeed with address: " << MEM_SIZE - i << " and MEM_SIZE: " << MEM_SIZE;
@@ -56,7 +52,8 @@ TEST(Fetch, Last7BytesFetchFails) {
 
 // fetch from valid memory location should succeed
 TEST(Fetch, ValidAddressSucceeds) {
-  initialize_memory();
+  init_mem(1024);
+  init_cache(0);
 
   // set the program counter to the 5th byte of memory
   reg_file[PC] = 4;
@@ -66,7 +63,8 @@ TEST(Fetch, ValidAddressSucceeds) {
 
 // validate that the bytes placed in the contrrol registers are correct (and in correct little endian order)
 TEST(Fetch, BytesPlacedInCtrlRegs) {
-  initialize_memory(10000);
+  init_mem(10000);
+  init_cache(0);
 
   // set the program counter to the 5th byte of memory
   reg_file[PC] = 4;
@@ -100,7 +98,8 @@ TEST(Fetch, BytesPlacedInCtrlRegs) {
 
 TEST(MemTests, ReadByteTests) {
   auto mem_size = 1024;
-  initialize_memory(mem_size);
+  init_mem(mem_size);
+  init_cache(0);
   auto mem_cntr_before = mem_cycle_cntr;
 
   for (auto addr = 0; addr < mem_size; addr++) {
@@ -117,7 +116,8 @@ TEST(MemTests, ReadByteTests) {
 
 TEST(MemTests, ReadWordTests) {
   auto mem_size = 1024;
-  initialize_memory(mem_size);
+  init_mem(mem_size);
+  init_cache(0);
   auto mem_cntr_before = mem_cycle_cntr;
 
   for (auto addr = 0; addr < mem_size - 3; addr++) {
@@ -134,7 +134,8 @@ TEST(MemTests, ReadWordTests) {
 
 TEST(MemTests, WriteByteTests) {
   auto mem_size = 1024;
-  initialize_memory(mem_size);
+  init_mem(mem_size);
+  init_cache(0);
   auto mem_cntr_before = mem_cycle_cntr;
 
   for (auto addr = 0; addr < mem_size; addr++) {
@@ -150,7 +151,8 @@ TEST(MemTests, WriteByteTests) {
 
 TEST(MemTests, WriteWordTests) {
   auto mem_size = 1024;
-  initialize_memory(mem_size);
+  init_mem(mem_size);
+  init_cache(0);
   auto mem_cntr_before = mem_cycle_cntr;
 
   for (auto addr = 0; addr < mem_size - 3; addr++) {
@@ -174,7 +176,8 @@ TEST(JumpTests, JumpInstructionEnumValues){
 }
 
 TEST(JumpTests, JumpBeyondMemoryFails) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_immediate(1024);
   set_operands(R8);
   reg_file[R8] = 1024;
@@ -189,7 +192,8 @@ TEST(JumpTests, JumpBeyondMemoryFails) {
 }
 
 TEST(JumpTests, JumpToLast7BytesFails) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operands(R8);
 
   unsigned int jump_ops[] = { JMP, JMR, BNZ, BGT, BLT, BRZ };
@@ -208,7 +212,8 @@ TEST(JumpTests, JumpToLast7BytesFails) {
 }
 
 TEST(JumpTests, JMR) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
 
   set_operation(JMR);
   set_operands(R9);
@@ -220,7 +225,8 @@ TEST(JumpTests, JMR) {
 }
 
 TEST(JumpTests, BNZ) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
 
   set_operation(BNZ);
   set_operands(R9);
@@ -241,7 +247,8 @@ TEST(JumpTests, BNZ) {
 }
 
 TEST(JumpTests, BGT) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
 
   set_operation(BGT);
   set_operands(R9);
@@ -262,7 +269,8 @@ TEST(JumpTests, BGT) {
 }
 
 TEST(JumpTests, BLT) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
 
   set_operation(BLT);
   set_operands(R9);
@@ -283,7 +291,8 @@ TEST(JumpTests, BLT) {
 }
 
 TEST(JumpTests, BRZ) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
 
   set_operation(BRZ);
   set_operands(R9);
@@ -307,6 +316,7 @@ TEST(JumpTests, BRZ) {
 // tests that fetch properly increments PC
 TEST(Fetch, IncrementsPC) {
   init_mem(1024);
+  init_cache(0);
   reg_file[PC] = 0;
   ASSERT_TRUE(fetch());
   EXPECT_EQ(reg_file[PC], 8);
@@ -336,7 +346,8 @@ TEST(Decode, DoubleDontCareValuesShouldntFail) {
 }
 
 TEST(Decode, TripleDontCareValuesShouldntFail) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_immediate(0);
 
   for (auto operation : operations_0operand_3dc) {
@@ -409,7 +420,8 @@ TEST(Decode, ValidOperandsSucceed) {
 
 // iterate through all valid operations and ensure that they all decode successfully
 TEST(Decode, ValidOperationsSucceed) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operands(R0, R1, R2);
   set_immediate(4);
 
@@ -517,7 +529,8 @@ TEST(ExecuteCompare, CmpiFunctionality) {
 }
 
 TEST(ExecuteFlow, JumpSetsPC) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(JMP);
   set_immediate(72);
 
@@ -526,7 +539,8 @@ TEST(ExecuteFlow, JumpSetsPC) {
 }
 
 TEST(ExecuteFlow, JumpBeyondMemoryFails) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(JMP);
   set_immediate(1024);
 
@@ -534,7 +548,8 @@ TEST(ExecuteFlow, JumpBeyondMemoryFails) {
 }
 
 TEST(ExecuteFlow, JumpToLast7BytesFails) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
 
   set_operation(JMP);
 
@@ -545,7 +560,8 @@ TEST(ExecuteFlow, JumpToLast7BytesFails) {
 }
 
 TEST(ExecuteMove, IstrStoresInteger) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(ISTR);
   set_operands(R7, R8);
 
@@ -567,7 +583,8 @@ TEST(ExecuteMove, IstrStoresInteger) {
 }
 
 TEST(ExecuteMove, IldrLoadsInteger) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(ILDR);
   set_operands(R7, R8);
 
@@ -593,7 +610,8 @@ TEST(ExecuteMove, IldrLoadsInteger) {
 }
 
 TEST(ExecuteMove, IstbStoresByte) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(ISTB);
   set_operands(R7, R8);
 
@@ -612,7 +630,8 @@ TEST(ExecuteMove, IstbStoresByte) {
 }
 
 TEST(ExecuteMove, IldbLoadsByte) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(ILDB);
   set_operands(R7, R8);
 
@@ -644,7 +663,8 @@ TEST(ExecuteMove, MovCopiesContents) {
 }
 
 TEST(ExecuteMove, MoviPutsImmediateInRegister) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(MOVI);
   set_operands(R5);
   set_immediate(0x45FA78ED);
@@ -657,7 +677,8 @@ TEST(ExecuteMove, MoviPutsImmediateInRegister) {
 }
 
 TEST(ExecuteMove, LdaPlacesAddressInRegister) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(LDA);
   set_operands(R6);
   set_immediate(157);
@@ -671,7 +692,8 @@ TEST(ExecuteMove, LdaPlacesAddressInRegister) {
 
 // loads the value from memory into a register
 TEST(ExecuteMove, TestLDA32BitLoad) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
 
 
   set_operation(LDA);
@@ -683,7 +705,8 @@ TEST(ExecuteMove, TestLDA32BitLoad) {
 }
 
 TEST(ExecuteMove, StrStoresIntToMemory) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(STR);
   set_operands(R7);
   set_immediate(503);
@@ -703,7 +726,8 @@ TEST(ExecuteMove, StrStoresIntToMemory) {
 }
 
 TEST(ExecuteMove, StrFailsBeyondMemory) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(STR);
   set_operands(R6);
   set_immediate(1024);
@@ -712,7 +736,8 @@ TEST(ExecuteMove, StrFailsBeyondMemory) {
 }
 
 TEST(ExecuteMove, StrFailsLast3Addresses) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(STR);
   set_operands(R6);
 
@@ -726,6 +751,7 @@ TEST(ExecuteMove, StrFailsLast3Addresses) {
 
 TEST(ExecuteMove, TestLdr) {
   init_mem(1024);
+  init_cache(0);
 
   prog_mem[60] = 0x21;
   prog_mem[61] = 0x43;
@@ -742,7 +768,8 @@ TEST(ExecuteMove, TestLdr) {
 }
 
 TEST(ExecuteMove, LdrFailsBeyondMemory) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(LDR);
   set_operands(R6);
   set_immediate(1024);
@@ -751,7 +778,8 @@ TEST(ExecuteMove, LdrFailsBeyondMemory) {
 }
 
 TEST(ExecuteMove, LdrFailsLast3Addresses) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(LDR);
   set_operands(R6);
 
@@ -764,6 +792,7 @@ TEST(ExecuteMove, LdrFailsLast3Addresses) {
 
 TEST(ExecuteMove, TestStb) {
   init_mem(1024);
+  init_cache(0);
 
   reg_file[R0] = 0xCD;
 
@@ -777,6 +806,7 @@ TEST(ExecuteMove, TestStb) {
 
 TEST(ExecuteMove, TestStbStores1Byte) {
   init_mem(1024);
+  init_cache(0);
 
   reg_file[R0] = 0x87654321;
 
@@ -795,7 +825,8 @@ TEST(ExecuteMove, TestStbStores1Byte) {
 }
 
 TEST(ExecuteMove, StbFailsBeyondMemory) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(STB);
   set_operands(R6);
   set_immediate(1024);
@@ -805,6 +836,7 @@ TEST(ExecuteMove, StbFailsBeyondMemory) {
 
 TEST(ExecuteMove, TestLdb) {
   init_mem(1024);
+  init_cache(0);
 
   prog_mem[60] = 0xCD;
 
@@ -817,7 +849,8 @@ TEST(ExecuteMove, TestLdb) {
 }
 
 TEST(ExecuteMove, LdbFailsBeyondMemory) {
-  initialize_memory(1024);
+  init_mem(1024);
+  init_cache(0);
   set_operation(LDB);
   set_operands(R6);
   set_immediate(1024);
@@ -1063,7 +1096,8 @@ TEST(ExecuteTRP, ExecuteTrpNeverExits) {
 
 // ISTR
 TEST(PeerTest, TestIstrInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = 0xAABBCCDD;
     reg_file[R2] = 100;
 
@@ -1081,7 +1115,8 @@ TEST(PeerTest, TestIstrInstruction) {
 
 // ILDR
 TEST(PeerTest, TestIldrInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     prog_mem[200] = 0x11;
     prog_mem[201] = 0x22;
     prog_mem[202] = 0x33;
@@ -1099,7 +1134,8 @@ TEST(PeerTest, TestIldrInstruction) {
 
 // ISTB
 TEST(PeerTest, TestIstbInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = 0xAABBCCDD;
     reg_file[R2] = 300;
 
@@ -1114,7 +1150,8 @@ TEST(PeerTest, TestIstbInstruction) {
 
 // ILDB
 TEST(PeerTest, TestIldbInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     prog_mem[400] = 0xAB;
     reg_file[R2] = 400;
 
@@ -1129,7 +1166,8 @@ TEST(PeerTest, TestIldbInstruction) {
 
 // JMR
 TEST(PeerTest, TestJmrInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = 256;
 
     cntrl_regs[OPERATION] = JMR;
@@ -1142,7 +1180,8 @@ TEST(PeerTest, TestJmrInstruction) {
 
 // BNZ
 TEST(PeerTest, TestBnzInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = 5;
 
     cntrl_regs[OPERATION] = BNZ;
@@ -1156,7 +1195,8 @@ TEST(PeerTest, TestBnzInstruction) {
 
 // BGT
 TEST(PeerTest, TestBgtInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = static_cast<unsigned int>(10);
 
     cntrl_regs[OPERATION] = BGT;
@@ -1170,7 +1210,8 @@ TEST(PeerTest, TestBgtInstruction) {
 
 // BLT
 TEST(PeerTest, TestBltInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = static_cast<unsigned int>(-3);
 
     cntrl_regs[OPERATION] = BLT;
@@ -1184,7 +1225,8 @@ TEST(PeerTest, TestBltInstruction) {
 
 // BRZ
 TEST(PeerTest, TestBrzInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = 0;
 
     cntrl_regs[OPERATION] = BRZ;
@@ -1198,7 +1240,8 @@ TEST(PeerTest, TestBrzInstruction) {
 
 // CMP
 TEST(PeerTest, TestCmpInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = static_cast<unsigned int>(10);
     reg_file[R2] = static_cast<unsigned int>(5);
 
@@ -1214,7 +1257,8 @@ TEST(PeerTest, TestCmpInstruction) {
 
 // CMPI
 TEST(PeerTest, TestCmpiInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1] = static_cast<unsigned int>(5);
 
     cntrl_regs[OPERATION] = CMPI;
@@ -1229,7 +1273,8 @@ TEST(PeerTest, TestCmpiInstruction) {
 
 //MOVI test
 TEST(PeerTest, MOVIInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     cntrl_regs[OPERATION]=MOVI;
     cntrl_regs[OPERAND_1]=R1;
     cntrl_regs[IMMEDIATE]=42;
@@ -1239,7 +1284,8 @@ TEST(PeerTest, MOVIInstruction) {
 
 //ADD test
 TEST(PeerTest, ADDInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1]=10;
     reg_file[R2]=5;
     cntrl_regs[OPERATION]=ADD;
@@ -1252,7 +1298,8 @@ TEST(PeerTest, ADDInstruction) {
 
 //SUB instruction
 TEST(PeerTest, SUBInstruction) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     reg_file[R1]=10;
     reg_file[R2]=3;
     cntrl_regs[OPERATION]=SUB;
@@ -1264,7 +1311,8 @@ TEST(PeerTest, SUBInstruction) {
 }
 //TRP halt test
 TEST(PeerTest, TRP0Halts) {
-    initialize_memory(1024);
+    init_mem(1024);
+    init_cache(0);
     cntrl_regs[OPERATION]=TRP;
     cntrl_regs[IMMEDIATE]=0;
     ASSERT_TRUE(execute());
