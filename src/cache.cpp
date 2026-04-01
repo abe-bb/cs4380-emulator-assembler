@@ -65,6 +65,18 @@ unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
 
 
 // CacheSet
+CacheSet::CacheSet(unsigned int set, std::vector<CacheLine> lines) {
+  this->set = set;
+  this->lines = lines;
+}
+
+unsigned int CacheSet::readWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int& outWord) {
+  return 0;
+}
+
+unsigned int CacheSet::writeWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int word) {
+  return 0;
+}
 
 
 

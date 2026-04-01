@@ -53,7 +53,10 @@ class CacheSet {
     std::vector<CacheLine> lines; 
 
   public:
-    CacheSet(unsigned int set, unsigned char set_bits);
+    CacheSet(unsigned int set, std::vector<CacheLine> lines);
+
+    unsigned int readWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int& outWord);
+    unsigned int writeWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int word);
 };
 
 
