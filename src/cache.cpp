@@ -103,6 +103,7 @@ unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int&
     // track lru cache line
     if (line.get_used() < lru_num) {
       lru_line = line;
+      lru_num = line.get_used();
     }
   }
 
@@ -116,7 +117,35 @@ unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int&
 
 unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int word) {
   counter += 1;
-  
+
+  unsigned long lru_num = ULONG_MAX;
+  CacheLine& lru_line = lines.front();
+  for (CacheLine& line : lines) {
+    // found uninitialized block
+    if (!line.isValid()) {
+      line.load_block(prog_mem, tag, set);
+      line.writeWord(bo, word, counter);
+      return 0;
+    }
+
+    // found matching block
+    if (line.get_tag() == tag) {
+      line.writeWord(bo, word, counter);
+      return 0;
+    }
+
+    // track lru cache line
+    if (line.get_used() < lru_num) {
+      lru_line = line;
+      lru_num = line.get_used();
+    }
+  }
+
+  // if we get here, the tag did not match any cached blocks
+  lru_line.write_block(prog_mem, set);
+  lru_line.load_block(prog_mem, tag, set);
+
+  lru_line.writeWord(bo, word, counter);
   return 0;
 }
 
