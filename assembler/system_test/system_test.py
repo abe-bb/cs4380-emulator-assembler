@@ -102,6 +102,12 @@ def test_directive_variations():
 def test_instructions():
     run_and_cmp("instructions")
 
+def test_ldr_with_label():
+    run_and_cmp("ldr_with_label")
+
+def test_lda_with_label():
+    run_and_cmp("lda_with_label")
+
 # session fixture that deletes all the assembler binary files after the tests run
 @pytest.fixture(scope="session", autouse=True)
 def clean_binary_outputs():
