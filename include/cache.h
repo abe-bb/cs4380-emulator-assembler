@@ -19,18 +19,21 @@ class CacheLine {
     bool valid;
     bool changed;
     unsigned int tag;
-    unsigned int used;
+    unsigned long used;
 
     unsigned char tag_bits;
     unsigned char bo_bits;
 
     std::vector<unsigned char> block;
 
+    unsigned int assemble_block_address(unsigned int tag, unsigned int set);
+
   public:
     CacheLine(unsigned int block_size, unsigned char tag_bits, unsigned char bo_bits);
 
     unsigned int get_tag();
     unsigned int get_used();
+    bool isValid();
 
     void write_block(unsigned char* prog_mem, unsigned int set);
     void load_block(unsigned char* prog_mem, unsigned int tag, unsigned int set);
@@ -38,12 +41,12 @@ class CacheLine {
     // This function reads a word from the cache.
     // This function WILL NOT read beyond the end of the block
     // bytes in the word beyond the end of the cache will be set to 0
-    unsigned int readWord(unsigned int block_address, unsigned int used);
+    unsigned int readWord(unsigned int block_offset, unsigned long used);
 
     // This function writes a word to the cache.
     // This function WILL NOT write beyond the end of the block
     // bytes in word byeond the end of the cache will be ignored
-    void writeWord(unsigned int block_address, unsigned int word, unsigned int used);
+    void writeWord(unsigned int block_offset, unsigned int word, unsigned long used);
 };
 
 
@@ -52,11 +55,20 @@ class CacheSet {
     unsigned int set;
     std::vector<CacheLine> lines; 
 
-  public:
-    CacheSet(unsigned int set, std::vector<CacheLine> lines);
+    unsigned char* prog_mem;
 
-    unsigned int readWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int& outWord);
-    unsigned int writeWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int word);
+    unsigned char set_bits;
+    unsigned char tag_bits;
+
+    unsigned long counter;
+
+  public:
+    CacheSet(unsigned int set, unsigned char tag_bits, unsigned char set_bits, std::vector<CacheLine> lines, unsigned char* prog_mem);
+
+    unsigned int get_set();
+
+    unsigned int readWord(unsigned int tag, unsigned int bo, unsigned int& outWord);
+    unsigned int writeWord(unsigned int tag, unsigned int bo, unsigned int word);
 };
 
 

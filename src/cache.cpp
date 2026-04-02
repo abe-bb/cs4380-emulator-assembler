@@ -1,4 +1,5 @@
 #include "../include/cache.h"
+#include <climits>
 #include <stdexcept>
 #include <vector>
 
@@ -65,16 +66,57 @@ unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
 
 
 // CacheSet
-CacheSet::CacheSet(unsigned int set, std::vector<CacheLine> lines) {
+CacheSet::CacheSet(unsigned int set, unsigned char tag_bits, unsigned char set_bits, std::vector<CacheLine> lines, unsigned char* prog_mem) {
   this->set = set;
   this->lines = lines;
+  this->prog_mem = prog_mem;
+
+  this->tag_bits = tag_bits;
+  this->set_bits = set_bits;
+
+  this->counter = 0;
 }
 
-unsigned int CacheSet::readWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int& outWord) {
+unsigned int CacheSet::get_set() {
+  return set;
+}
+
+unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int& outWord) {
+  counter += 1;
+
+  unsigned long lru_num = ULONG_MAX;
+  CacheLine& lru_line = lines.front();
+  for (CacheLine& line : lines) {
+    // found uninitialized block
+    if (!line.isValid()) {
+      line.load_block(prog_mem, tag, set);
+      outWord = line.readWord(bo, counter);
+      return 0;
+    }
+
+    // found matching block
+    if (line.get_tag() == tag) {
+      outWord = line.readWord(bo, counter);
+      return 0;
+    }
+
+    // track lru cache line
+    if (line.get_used() < lru_num) {
+      lru_line = line;
+    }
+  }
+
+  // if we get here, the tag did not match any cached blocks
+  lru_line.write_block(prog_mem, set);
+  lru_line.load_block(prog_mem, tag, set);
+
+  outWord = lru_line.readWord(bo, counter);
   return 0;
 }
 
-unsigned int CacheSet::writeWord(unsigned int tag, unsigned int set, unsigned int bo, unsigned int word) {
+unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int word) {
+  counter += 1;
+  
   return 0;
 }
 
@@ -105,38 +147,45 @@ unsigned int CacheLine::get_used() {
   return used;
 }
 
+bool CacheLine::isValid() {
+  return valid;
+}
 
-unsigned int CacheLine::readWord(unsigned int block_address, unsigned int used) {
+
+unsigned int CacheLine::readWord(unsigned int block_offset, unsigned long used) {
+  this->used = used;
+  
   unsigned int word = 0;
-  if (block_address + 3 < block.size()) {
-    word += block[block_address + 3] << 24;
+  if (block_offset + 3 < block.size()) {
+    word += block[block_offset + 3] << 24;
   }
-  if (block_address + 2 < block.size()) {
-    word += block[block_address + 2] << 16;
+  if (block_offset + 2 < block.size()) {
+    word += block[block_offset + 2] << 16;
   }
-  if (block_address + 1 < block.size()) {
-    word += block[block_address + 1] << 8;
+  if (block_offset + 1 < block.size()) {
+    word += block[block_offset + 1] << 8;
   }
-  if (block_address < block.size()) {
-    word += block[block_address];
+  if (block_offset < block.size()) {
+    word += block[block_offset];
   }
   return word;
 }
 
-void CacheLine::writeWord(unsigned int block_address, unsigned int word, unsigned int used) {
+void CacheLine::writeWord(unsigned int block_offset, unsigned int word, unsigned long used) {
   changed = true;
+  this->used = used;
 
-  if (block_address + 3 < block.size()) {
-    block[block_address + 3] = (word >> 24) & 0xFF;
+  if (block_offset + 3 < block.size()) {
+    block[block_offset + 3] = (word >> 24) & 0xFF;
   }
-  if (block_address + 2 < block.size()) {
-    block[block_address + 2] = (word >> 16) & 0xFF;
+  if (block_offset + 2 < block.size()) {
+    block[block_offset + 2] = (word >> 16) & 0xFF;
   }
-  if (block_address + 1 < block.size()) {
-    block[block_address + 1] = (word >> 8) & 0xFF;
+  if (block_offset + 1 < block.size()) {
+    block[block_offset + 1] = (word >> 8) & 0xFF;
   }
-  if (block_address < block.size()) {
-    block[block_address] = word & 0xFF;
+  if (block_offset < block.size()) {
+    block[block_offset] = word & 0xFF;
   }
   return;
 }
@@ -147,8 +196,7 @@ void CacheLine::write_block(unsigned char* prog_mem, unsigned int set) {
     return;
   }
 
-  unsigned int set_bits = 32 - (tag_bits + bo_bits);
-  unsigned int block_address = ((tag << tag_bits) | (set << set_bits)) << bo_bits;
+  unsigned int block_address = assemble_block_address(tag, set);
 
   for (auto i = 0; i < block.size(); i++) {
     prog_mem[block_address + i] = block[i];
@@ -161,12 +209,15 @@ void CacheLine::load_block(unsigned char* prog_mem, unsigned int tag, unsigned i
 
   this->tag = tag;  
 
-  unsigned int set_bits = 32 - (tag_bits + bo_bits);
-  unsigned int block_address = ((tag << tag_bits) | (set << set_bits)) << bo_bits;
+  unsigned int block_address = assemble_block_address(tag, set);
 
   // read from memory into block
   for (auto i = 0; i < block.size(); i++) {
-    block[i] = prog_mem[i];
+    block[i] = prog_mem[block_address + i];
   }
+}
+
+unsigned int CacheLine::assemble_block_address(unsigned int tag, unsigned int set) {
+    return ((tag << (32 - tag_bits)) | (set << bo_bits));
 }
 

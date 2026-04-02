@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <gtest/gtest.h>
-#include <ios>
 #include <stdexcept>
+#include <vector>
 
 #include "../include/cache.h"
 
@@ -139,6 +139,78 @@ TEST(CacheLine, SimpleWrite) {
 
   // check values in memory
   ASSERT_EQ(0xAC, prog_mem[0]);
+
+  delete [] prog_mem;
+}
+
+TEST(CacheSet, ReadsMemoryCorrectly) {
+  CacheLine line1 = CacheLine(64, 26, 6);
+  CacheLine line2 = CacheLine(64, 26, 6);
+  std::vector<CacheLine> lines = {line1, line2};
+
+  unsigned char* prog_mem = new unsigned char[128];
+
+  CacheSet set = CacheSet(0, 26, 0, lines, prog_mem);
+
+
+  // place values in memory
+  for (auto i = 0; i < 128; i++) {
+    prog_mem[i] = i * 2;
+  }
+
+
+  for (auto i = 0; i < 128; i+= 4) {
+    unsigned int bo = i & 0x3F;
+    unsigned int tag = i >> 6;
+    unsigned int cache_word = 0;
+    unsigned int mem_cycles = set.readWord(tag, bo, cache_word);
+
+    ASSERT_EQ(i * 2, cache_word & 0xFF);
+    ASSERT_EQ((i + 1) * 2, (cache_word >> 8) & 0xFF);
+    ASSERT_EQ((i + 2) * 2, (cache_word >> 16) & 0xFF);
+    ASSERT_EQ((i + 3) * 2, (cache_word >> 24) & 0xFF);
+  }
+
+  delete[] prog_mem;
+}
+
+TEST(CacheSet, WritesMemoryCorrectly) {
+  CacheLine line1 = CacheLine(64, 26, 6);
+  CacheLine line2 = CacheLine(64, 26, 6);
+  std::vector<CacheLine> lines = {line1, line2};
+
+  unsigned char* prog_mem = new unsigned char[256];
+
+  CacheSet set = CacheSet(0, 26, 0, lines, prog_mem);
+  // zero out memory
+  for (auto i = 0; i < 256; i++) {
+    prog_mem[i] = 0;
+  }
+
+  // write some memory in the first and second memory block
+  set.writeWord(0, 0, 0xDEADBEEF);
+  set.writeWord(1, 0, 0x89ABCDEF);
+
+
+  // Read from 3rd and 4th memory block
+  // (should flush first two from the cache,
+  // causing changes to be written)
+  unsigned int result;
+  set.readWord(2, 0, result);
+  set.readWord(3, 0, result);
+
+
+  // first block
+  ASSERT_EQ(0xEF, prog_mem[0]);
+  ASSERT_EQ(0xBE, prog_mem[1]);
+  ASSERT_EQ(0xAD, prog_mem[2]);
+  ASSERT_EQ(0xDE, prog_mem[3]);
+
+  // second block
+  ASSERT_EQ(0xEF, prog_mem[64]);
+  ASSERT_EQ(0xCD, prog_mem[65]);
+  ASSERT_EQ(0xAB, prog_mem[66]);
+  ASSERT_EQ(0x89, prog_mem[67]);
 
   delete [] prog_mem;
 }
