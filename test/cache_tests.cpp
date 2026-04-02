@@ -214,3 +214,92 @@ TEST(CacheSet, WritesMemoryCorrectly) {
 
   delete [] prog_mem;
 }
+
+TEST(NWayCache, DirectMappedWriteFlushRead) {
+  unsigned char* prog_mem = new unsigned char[2048];
+
+  for (auto i = 0; i < 2048; i++) {
+    prog_mem[i] = 0;
+  }
+
+  ASSERT_EQ(0, prog_mem[0]) << "Program Memory should be empty";
+
+  // direct mapped cache
+  NWayCache dm_cache = NWayCache(prog_mem, 16, 64, 1);
+
+  // write 55 to address 0
+  dm_cache.writeByte(0, 55);
+
+  // value should be written to the cache, but not written back to memory
+  ASSERT_EQ(0, prog_mem[0]) << "Value written to mem before flush";
+
+  // This read should not collide with first block
+  unsigned char read_byte = 0;
+  dm_cache.readByte(1023, read_byte);
+  ASSERT_EQ(0, read_byte);
+  ASSERT_EQ(0, prog_mem[0]) << "Flush ocurred at unexpected time";
+
+  // read from address 1024
+  // should collide with the block written to earler, causing a write to memory
+  dm_cache.readByte(1024, read_byte);
+  ASSERT_EQ(0, read_byte);
+  
+  ASSERT_EQ(55, prog_mem[0]) << "Value was not written to memeory";
+
+  delete [] prog_mem;
+}
+
+TEST(NWayCache, FullyAssociativeWriteFlushRead) {
+  unsigned char* prog_mem = new unsigned char[2048];
+
+  for (auto i = 0; i < 2048; i++) {
+    prog_mem[i] = 0;
+  }
+
+  // fully associative cache
+  NWayCache dm_cache = NWayCache(prog_mem, 16, 64, 64);
+
+
+  // fill all 64 cache lines with data
+  for (auto i = 0; i < 1024; i++) {
+    unsigned char byte =  i & 0xFF;
+    dm_cache.writeByte(i, byte);
+  }
+
+  // nothing should be written to memory yet
+  for (auto i = 0; i < 1024; i++) {
+    ASSERT_EQ(0, prog_mem[i]);
+  }
+  //  everything should be readable from the cache though
+  for (auto i = 0; i < 1024; i++) {
+    unsigned char byte = 0;
+    dm_cache.readByte(i, byte);
+    ASSERT_EQ(0, byte);
+  }
+
+  // read from blocks to force the cache to write everything back to memory
+  for (auto i = 1024; i < 2048; i += 16) {
+    unsigned char byte = 10;
+    dm_cache.readByte(i, byte);
+    ASSERT_EQ(0, byte);
+  }
+
+  // everything from the writes should be written to memory now
+  for (auto i = 0; i < 1024; i++) {
+    ASSERT_EQ(i & 0xFF, prog_mem[i]);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
