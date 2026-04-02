@@ -15,19 +15,6 @@ class Cache {
 };
 
 class CacheLine {
-  private:
-    bool valid;
-    bool changed;
-    unsigned int tag;
-    unsigned long used;
-
-    unsigned char tag_bits;
-    unsigned char bo_bits;
-
-    std::vector<unsigned char> block;
-
-    unsigned int assemble_block_address(unsigned int tag, unsigned int set);
-
   public:
     CacheLine(unsigned int block_size, unsigned char tag_bits, unsigned char bo_bits);
 
@@ -47,10 +34,31 @@ class CacheLine {
     // This function WILL NOT write beyond the end of the block
     // bytes in word byeond the end of the cache will be ignored
     void writeWord(unsigned int block_offset, unsigned int word, unsigned long used);
+
+  private:
+    bool valid;
+    bool changed;
+    unsigned int tag;
+    unsigned long used;
+
+    unsigned char tag_bits;
+    unsigned char bo_bits;
+
+    std::vector<unsigned char> block;
+
+    unsigned int assemble_block_address(unsigned int tag, unsigned int set);
 };
 
 
 class CacheSet {
+  public:
+    CacheSet(unsigned int set, unsigned char tag_bits, unsigned char set_bits, std::vector<CacheLine> lines, unsigned char* prog_mem);
+
+    unsigned int get_set();
+
+    unsigned int readWord(unsigned int tag, unsigned int bo, unsigned int& outWord);
+    unsigned int writeWord(unsigned int tag, unsigned int bo, unsigned int word);
+
   private:
     unsigned int set;
     std::vector<CacheLine> lines; 
@@ -61,23 +69,16 @@ class CacheSet {
     unsigned char tag_bits;
 
     unsigned long counter;
-
-  public:
-    CacheSet(unsigned int set, unsigned char tag_bits, unsigned char set_bits, std::vector<CacheLine> lines, unsigned char* prog_mem);
-
-    unsigned int get_set();
-
-    unsigned int readWord(unsigned int tag, unsigned int bo, unsigned int& outWord);
-    unsigned int writeWord(unsigned int tag, unsigned int bo, unsigned int word);
 };
 
 
 class NWayCache : Cache {
   public:
     // Constructor
-    // cache_lines % associativity must equal 0
     // cache size = block_size * cache_lines
     // num sets = cache_lines / associativity
+    // 
+    // cache_lines % associativity must equal 0
     // cache_lines must be a power of 2
     // block_size must be a power of 2
     // minimum block_size 4 bytes
@@ -90,5 +91,19 @@ class NWayCache : Cache {
     unsigned int writeWord(unsigned int address, unsigned int word) override;
 
   private:
-    std::vector<CacheSet> storage;
+    std::vector<CacheSet> sets;
+
+    unsigned char tag_bits;
+    unsigned char set_bits;
+    unsigned char block_bits;
+
+    unsigned int tag_mask;
+    unsigned int set_mask;
+    unsigned int block_mask;
+    
+    // returns the set_id portion of the address
+    unsigned int get_set_id(unsigned int address);
+    // outSecondAddr will the address of the second block, returns the number
+    // of bytes in the word that are in the second block
+    unsigned char split_bits(unsigned int address, unsigned int& outSecondAddr);
 };

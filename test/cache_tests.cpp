@@ -215,6 +215,40 @@ TEST(CacheSet, WritesMemoryCorrectly) {
   delete [] prog_mem;
 }
 
+TEST(NWayCache, ConstructionTests) {
+  unsigned char prog_mem[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+  // valid fully associative cache config
+  ASSERT_NO_THROW(NWayCache(prog_mem, 8, 16, 16));
+
+  // valid direct mapped cache config
+  ASSERT_NO_THROW(NWayCache(prog_mem, 8, 16, 1));
+
+  // valid 2 way set cache config
+  ASSERT_NO_THROW(NWayCache(prog_mem, 8, 16, 2));
+
+  // valid 4 way set cache config
+  ASSERT_NO_THROW(NWayCache(prog_mem, 8, 16, 4));
+
+  // valid 16 way set cache config
+  ASSERT_NO_THROW(NWayCache(prog_mem, 8, 32, 16));
+
+  // block size too small
+  ASSERT_THROW(NWayCache(prog_mem, 2, 2, 2), std::invalid_argument);
+
+  // too few cache lines
+  ASSERT_THROW(NWayCache(prog_mem, 4, 0, 2), std::invalid_argument);
+
+  // block size not a power of 2
+  ASSERT_THROW(NWayCache(prog_mem, 5, 2, 2), std::invalid_argument);
+
+  // cache_lines not a power of 2
+  ASSERT_THROW(NWayCache(prog_mem, 4, 3, 2), std::invalid_argument);
+
+  // cache_lines % associativity != 0
+  ASSERT_THROW(NWayCache(prog_mem, 4, 4, 3), std::invalid_argument);
+}
+
 TEST(NWayCache, DirectMappedWriteFlushRead) {
   unsigned char* prog_mem = new unsigned char[2048];
 

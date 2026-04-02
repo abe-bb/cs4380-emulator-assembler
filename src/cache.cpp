@@ -40,6 +40,44 @@ NWayCache::NWayCache(unsigned char* prog_mem, unsigned int block_size,
       (cache_lines % associativitiy != 0)) {
 
     throw std::invalid_argument("Invalid cache configuration");
+
+    this->sets = std::vector<CacheSet>();
+
+    // create CacheSets and CacheLines
+    unsigned int num_sets = cache_lines / associativitiy;
+    unsigned int block_bits = 0;
+    unsigned int set_bits = 0;
+
+    unsigned int v = block_size;
+    while (v >> 1 <= 1) {
+      block_bits += 1;
+    }
+
+    v = num_sets;
+    while (v >> 1 <= 1) {
+      set_bits += 1;
+    }
+
+    unsigned int tag_bits = 32 - block_bits - set_bits;
+
+    this->tag_bits = tag_bits;
+    this->set_bits = set_bits;
+    this->block_bits = block_bits;
+
+    this->block_mask = (1 << block_bits) - 1;
+    this->set_mask = ((1 << set_bits) - 1) << block_bits;
+    this->tag_mask = ((1 << tag_bits) - 1) << block_bits << set_bits;
+
+    unsigned int set_id = 0;
+    for (auto i = 0; i < num_sets; i++) {
+      std::vector<CacheLine> lines;
+      for (auto j = 0; j < associativitiy; j++) {    
+        CacheLine line = CacheLine(block_size, tag_bits, block_bits);
+        lines.push_back(line);
+      }
+      CacheSet set = CacheSet(set_id, tag_bits, set_bits, lines, prog_mem);
+      sets.push_back(set);
+    }
   }
 
 }
@@ -57,6 +95,9 @@ unsigned int NWayCache::writeByte(unsigned int address, unsigned char byte) {
 unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
    outWord = *(unsigned int*)(prog_mem + address);
    return 8;
+
+   for (CacheSet& set : sets) {
+   }
 }
 
 unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
@@ -64,6 +105,15 @@ unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
   return 8;
 }
 
+unsigned int NWayCache::get_set_id(unsigned int address) {
+  return (address & set_mask) >> block_bits;
+}
+
+unsigned char NWayCache::split_bits(unsigned int address, unsigned int& outSecondAddr) {
+  unsigned int block_address = address & block_mask;
+  
+  
+}
 
 // CacheSet
 CacheSet::CacheSet(unsigned int set, unsigned char tag_bits, unsigned char set_bits, std::vector<CacheLine> lines, unsigned char* prog_mem) {
