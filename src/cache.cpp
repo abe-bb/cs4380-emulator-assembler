@@ -83,63 +83,91 @@ NWayCache::NWayCache(unsigned char* prog_mem, unsigned int block_size,
 }
 
 unsigned int NWayCache::readByte(unsigned int address, unsigned char& outByte) {
-  outByte = prog_mem[address];
-  return 8;
+  auto set_id = get_set_id(address);
+
+  for (CacheSet& set : sets) {
+    if (set.get_set() != set_id) {
+      continue;
+    }
+
+    unsigned int readWord = 0;
+    unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
+    auto timing = set.readWord(tag, address & block_mask, readWord);
+
+    outByte = readWord & 0xFF;
+    // TODO: calculate timing
+    return 8;
+  }
+
+  throw std::runtime_error("Failed to find matching set in cache!!");
 }
 
 unsigned int NWayCache::writeByte(unsigned int address, unsigned char byte) {
-  prog_mem[address] = byte;
-  return 8;
+  auto set_id = get_set_id(address);
+
+  for (CacheSet& set : sets) {
+    if (set.get_set() != set_id) {
+      continue;
+    }
+
+    unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
+    auto timing = set.writeWord(tag, address & block_mask, byte, 1);
+
+    // TODO: calculate timing
+    return 8;
+  }
+
+  throw std::runtime_error("Failed to find matching set in cache!!");
 }
 
 unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
-   // detect split block reads
-   auto set_id = get_set_id(address);
-   unsigned int second_addr = 0;
-   unsigned int second_addr_bytes = split_blocks(address, second_addr);
-   unsigned int first_addr_bytes = 4 - second_addr_bytes;
+  // detect split block reads
+  auto set_id = get_set_id(address);
+  unsigned int second_addr = 0;
+  unsigned int second_addr_bytes = split_blocks(address, second_addr);
+  unsigned int first_addr_bytes = 4 - second_addr_bytes;
 
-   outWord = 0;
-   
-   unsigned int first_timing = 0;
-   for (CacheSet& set : sets) {
-     if (set.get_set() != set_id) {
-       continue;
-     }
+  outWord = 0;
 
-     unsigned int readWord = 0;
-     unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
-     first_timing = set.readWord(tag, address & block_mask, readWord);
-
-     unsigned long p1_mask = 1;
-     p1_mask = (p1_mask << (first_addr_bytes * 8)) - 1;
-     unsigned int part1 = readWord & p1_mask;
-     part1 = part1 << (second_addr_bytes * 8);
-     outWord = readWord;
-     break;
+  unsigned int first_timing = 0;
+  for (CacheSet& set : sets) {
+   if (set.get_set() != set_id) {
+     continue;
    }
 
-   if (second_addr_bytes == 0) {
-     // TODO: Calculate timing
-     return 8;
+   unsigned int readWord = 0;
+   unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
+   first_timing = set.readWord(tag, address & block_mask, readWord);
+
+   unsigned long p1_mask = 1;
+   p1_mask = (p1_mask << (first_addr_bytes * 8)) - 1;
+   unsigned int part1 = readWord & p1_mask;
+   part1 = part1 << (second_addr_bytes * 8);
+   outWord = readWord;
+   break;
+  }
+
+  if (second_addr_bytes == 0) {
+   // TODO: Calculate timing
+   return 8;
+  }
+
+  set_id = get_set_id(second_addr);
+  // read from second block
+  for (CacheSet& set : sets) {
+   if (set.get_set() != set_id) {
+     continue;
    }
 
-   set_id = get_set_id(second_addr);
-   // read from second block
-   for (CacheSet& set : sets) {
-     if (set.get_set() != set_id) {
-       continue;
-     }
+   unsigned int readWord = 0;
+   unsigned int tag = (second_addr & tag_mask) >> (32 - tag_bits);
+   auto second_timing = set.readWord(tag, second_addr & block_mask, readWord);
 
-     unsigned int readWord = 0;
-     unsigned int tag = (second_addr & tag_mask) >> (32 - tag_bits);
-     auto second_timing = set.readWord(tag, second_addr & block_mask, readWord);
+   outWord |= (readWord & (1 << (second_addr_bytes * 8)) - 1) << (first_addr_bytes * 8);
 
-     outWord |= (readWord & (1 << (second_addr_bytes * 8)) - 1) << (first_addr_bytes * 8);
-
-     // TODO: Calculate timing
-     return 10;
-   }
+   // TODO: Calculate timing
+   return 10;
+  }
 
    throw std::runtime_error("Failed to find matching set in cache!!");
 }
@@ -225,7 +253,7 @@ unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int&
   counter += 1;
 
   unsigned long lru_num = ULONG_MAX;
-  CacheLine& lru_line = lines.front();
+  CacheLine* lru_line = &lines.front();
   for (CacheLine& line : lines) {
     // found uninitialized block
     if (!line.isValid()) {
@@ -242,16 +270,16 @@ unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int&
 
     // track lru cache line
     if (line.get_used() < lru_num) {
-      lru_line = line;
+      lru_line = &line;
       lru_num = line.get_used();
     }
   }
 
   // if we get here, the tag did not match any cached blocks
-  lru_line.write_block(prog_mem, set);
-  lru_line.load_block(prog_mem, tag, set);
+  lru_line->write_block(prog_mem, set);
+  lru_line->load_block(prog_mem, tag, set);
 
-  outWord = lru_line.readWord(bo, counter);
+  outWord = lru_line->readWord(bo, counter);
   return 0;
 }
 
@@ -259,7 +287,7 @@ unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int
   counter += 1;
 
   unsigned long lru_num = ULONG_MAX;
-  CacheLine& lru_line = lines.front();
+  CacheLine* lru_line = &lines.front();
   for (CacheLine& line : lines) {
     // found uninitialized block
     if (!line.isValid()) {
@@ -276,16 +304,16 @@ unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int
 
     // track lru cache line
     if (line.get_used() < lru_num) {
-      lru_line = line;
+      lru_line = &line;
       lru_num = line.get_used();
     }
   }
 
   // if we get here, the tag did not match any cached blocks
-  lru_line.write_block(prog_mem, set);
-  lru_line.load_block(prog_mem, tag, set);
+  lru_line->write_block(prog_mem, set);
+  lru_line->load_block(prog_mem, tag, set);
 
-  lru_line.writeWord(bo, word, counter, num_bytes);
+  lru_line->writeWord(bo, word, counter, num_bytes);
   return 0;
 }
 

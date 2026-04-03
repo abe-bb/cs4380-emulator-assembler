@@ -302,25 +302,25 @@ TEST(NWayCache, FullyAssociativeWriteFlushRead) {
 
   // nothing should be written to memory yet
   for (auto i = 0; i < 1024; i++) {
-    ASSERT_EQ(0, prog_mem[i]);
+    ASSERT_EQ(0, prog_mem[i]) << "Memory written too early";
   }
   //  everything should be readable from the cache though
   for (auto i = 0; i < 1024; i++) {
     unsigned char byte = 0;
     dm_cache.readByte(i, byte);
-    ASSERT_EQ(0, byte);
+    ASSERT_EQ(i & 0xFF, byte)<< "Cache failed to save data";
   }
 
   // read from blocks to force the cache to write everything back to memory
   for (auto i = 1024; i < 2048; i += 16) {
     unsigned char byte = 10;
     dm_cache.readByte(i, byte);
-    ASSERT_EQ(0, byte);
+    ASSERT_EQ(0, byte) << "Cache failed to read from memory";
   }
 
   // everything from the writes should be written to memory now
   for (auto i = 0; i < 1024; i++) {
-    ASSERT_EQ(i & 0xFF, prog_mem[i]);
+    ASSERT_EQ(i & 0xFF, prog_mem[i]) << "Cache failed to write data back at addr: " << i;
   }
 }
 
