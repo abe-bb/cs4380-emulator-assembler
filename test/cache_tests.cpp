@@ -106,7 +106,7 @@ TEST(CacheLine, WritesMemoryCorrectly) {
     word += ((i + 1) * 2) << 8;
     word += i * 2;
 
-    line.writeWord(i, word, 0);
+    line.writeWord(i, word, 0, 4);
   }
 
   // write values back to memory
@@ -132,7 +132,7 @@ TEST(CacheLine, SimpleWrite) {
   line.load_block(prog_mem, 0, 0);
 
   // write values into the cache
-  line.writeWord(0, 0xAC, 0);
+  line.writeWord(0, 0xAC, 0, 4);
 
   // write values back to memory
   line.write_block(prog_mem, 0);
@@ -188,8 +188,8 @@ TEST(CacheSet, WritesMemoryCorrectly) {
   }
 
   // write some memory in the first and second memory block
-  set.writeWord(0, 0, 0xDEADBEEF);
-  set.writeWord(1, 0, 0x89ABCDEF);
+  set.writeWord(0, 0, 0xDEADBEEF, 4);
+  set.writeWord(1, 0, 0x89ABCDEF, 4);
 
 
   // Read from 3rd and 4th memory block
@@ -343,6 +343,28 @@ TEST(NWayCache, ReadWord) {
   dm_cache.readWord(8, outWord);
   ASSERT_EQ(0x0b0a0908, outWord);
 
+}
+
+TEST(NWayCache, WriteWord) {
+  unsigned char* prog_mem = new unsigned char[128];
+
+  for (auto i = 0; i < 128; i++) {
+    prog_mem[i] = i;
+  }
+
+  NWayCache dm_cache = NWayCache(prog_mem, 4, 2, 1);
+
+  unsigned int outWord = 0;
+
+  // single block read
+  dm_cache.readWord(0, outWord);
+  ASSERT_EQ(0x03020100, outWord);
+
+  dm_cache.writeWord(0, 0xDEADBEEF);
+
+  // read back written word
+  dm_cache.readWord(0, outWord);
+  ASSERT_EQ(0xDEADBEEF, outWord);
 }
 
 TEST(NWayCache, ReadWordSplitBlock) {

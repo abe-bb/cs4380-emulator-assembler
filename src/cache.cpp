@@ -101,7 +101,6 @@ unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
 
    outWord = 0;
    
-   
    unsigned int first_timing = 0;
    for (CacheSet& set : sets) {
      if (set.get_set() != set_id) {
@@ -110,7 +109,7 @@ unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
 
      unsigned int readWord = 0;
      unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
-     auto timing = set.readWord(tag, address & block_mask, readWord);
+     first_timing = set.readWord(tag, address & block_mask, readWord);
 
      unsigned long p1_mask = 1;
      p1_mask = (p1_mask << (first_addr_bytes * 8)) - 1;
@@ -126,7 +125,7 @@ unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
    }
 
    set_id = get_set_id(second_addr);
-   // fetch second block
+   // read from second block
    for (CacheSet& set : sets) {
      if (set.get_set() != set_id) {
        continue;
@@ -146,7 +145,44 @@ unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
 }
 
 unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
-  *(unsigned int*)(prog_mem + address) = word;
+   // detect split block writes
+   auto set_id = get_set_id(address);
+   unsigned int second_addr = 0;
+   unsigned int second_addr_bytes = split_blocks(address, second_addr);
+   unsigned int first_addr_bytes = 4 - second_addr_bytes;
+
+   unsigned int first_timing = 0;
+   for (CacheSet& set : sets) {
+     if (set.get_set() != set_id) {
+       continue;
+     }
+
+     unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
+     first_timing = set.writeWord(tag, address & block_mask, word, first_addr_bytes);
+     break;
+   }
+   
+   if (second_addr_bytes == 0) {
+     // TODO: Calculate timing
+     return 8;
+   }
+
+   set_id = get_set_id(second_addr);
+   // write to second block
+   for (CacheSet& set : sets) {
+     if (set.get_set() != set_id) {
+       continue;
+     }
+
+     unsigned int tag = (second_addr & tag_mask) >> (32 - tag_bits);
+     unsigned int b2_word = word >> (first_addr_bytes * 8);
+     auto second_timing = set.writeWord(tag, second_addr & block_mask, b2_word, second_addr_bytes);
+
+     // TODO: Calculate timing
+     return 10;
+   }
+
+  throw std::runtime_error("Failed to find matching set in cache!!");
   return 8;
 }
 
@@ -219,7 +255,7 @@ unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int&
   return 0;
 }
 
-unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int word) {
+unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int word, unsigned char num_bytes) {
   counter += 1;
 
   unsigned long lru_num = ULONG_MAX;
@@ -228,13 +264,13 @@ unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int
     // found uninitialized block
     if (!line.isValid()) {
       line.load_block(prog_mem, tag, set);
-      line.writeWord(bo, word, counter);
+      line.writeWord(bo, word, counter, num_bytes);
       return 0;
     }
 
     // found matching block
     if (line.get_tag() == tag) {
-      line.writeWord(bo, word, counter);
+      line.writeWord(bo, word, counter, num_bytes);
       return 0;
     }
 
@@ -249,7 +285,7 @@ unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int
   lru_line.write_block(prog_mem, set);
   lru_line.load_block(prog_mem, tag, set);
 
-  lru_line.writeWord(bo, word, counter);
+  lru_line.writeWord(bo, word, counter, num_bytes);
   return 0;
 }
 
@@ -304,20 +340,20 @@ unsigned int CacheLine::readWord(unsigned int block_offset, unsigned long used) 
   return word;
 }
 
-void CacheLine::writeWord(unsigned int block_offset, unsigned int word, unsigned long used) {
+void CacheLine::writeWord(unsigned int block_offset, unsigned int word, unsigned long used, unsigned char num_bytes) {
   changed = true;
   this->used = used;
 
-  if (block_offset + 3 < block.size()) {
+  if (block_offset + 3 < block.size() && num_bytes >= 4) {
     block[block_offset + 3] = (word >> 24) & 0xFF;
   }
-  if (block_offset + 2 < block.size()) {
+  if (block_offset + 2 < block.size() && num_bytes >= 3) {
     block[block_offset + 2] = (word >> 16) & 0xFF;
   }
-  if (block_offset + 1 < block.size()) {
+  if (block_offset + 1 < block.size() && num_bytes >= 2) {
     block[block_offset + 1] = (word >> 8) & 0xFF;
   }
-  if (block_offset < block.size()) {
+  if (block_offset < block.size() && num_bytes >= 1) {
     block[block_offset] = word & 0xFF;
   }
   return;

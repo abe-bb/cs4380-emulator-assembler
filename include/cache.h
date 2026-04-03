@@ -32,8 +32,10 @@ class CacheLine {
 
     // This function writes a word to the cache.
     // This function WILL NOT write beyond the end of the block
-    // bytes in word byeond the end of the cache will be ignored
-    void writeWord(unsigned int block_offset, unsigned int word, unsigned long used);
+    // bytes in word beyond the end of the cache will be ignored.
+    // additionally, the num_bytes parameter can be set to a number < 4
+    // to reduce the number of bytes written. 
+    void writeWord(unsigned int block_offset, unsigned int word, unsigned long used, unsigned char num_bytes);
 
   private:
     bool valid;
@@ -57,7 +59,7 @@ class CacheSet {
     unsigned int get_set();
 
     unsigned int readWord(unsigned int tag, unsigned int bo, unsigned int& outWord);
-    unsigned int writeWord(unsigned int tag, unsigned int bo, unsigned int word);
+    unsigned int writeWord(unsigned int tag, unsigned int bo, unsigned int word, unsigned char num_bytes);
 
   private:
     unsigned int set;
