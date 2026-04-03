@@ -40,46 +40,46 @@ NWayCache::NWayCache(unsigned char* prog_mem, unsigned int block_size,
       (cache_lines % associativitiy != 0)) {
 
     throw std::invalid_argument("Invalid cache configuration");
-
-    this->sets = std::vector<CacheSet>();
-
-    // create CacheSets and CacheLines
-    unsigned int num_sets = cache_lines / associativitiy;
-    unsigned int block_bits = 0;
-    unsigned int set_bits = 0;
-
-    unsigned int v = block_size;
-    while (v >> 1 <= 1) {
-      block_bits += 1;
-    }
-
-    v = num_sets;
-    while (v >> 1 <= 1) {
-      set_bits += 1;
-    }
-
-    unsigned int tag_bits = 32 - block_bits - set_bits;
-
-    this->tag_bits = tag_bits;
-    this->set_bits = set_bits;
-    this->block_bits = block_bits;
-
-    this->block_mask = (1 << block_bits) - 1;
-    this->set_mask = ((1 << set_bits) - 1) << block_bits;
-    this->tag_mask = ((1 << tag_bits) - 1) << block_bits << set_bits;
-
-    unsigned int set_id = 0;
-    for (auto i = 0; i < num_sets; i++) {
-      std::vector<CacheLine> lines;
-      for (auto j = 0; j < associativitiy; j++) {    
-        CacheLine line = CacheLine(block_size, tag_bits, block_bits);
-        lines.push_back(line);
-      }
-      CacheSet set = CacheSet(set_id, tag_bits, set_bits, lines, prog_mem);
-      sets.push_back(set);
-    }
   }
 
+  this->sets = std::vector<CacheSet>();
+
+  // create CacheSets and CacheLines
+  unsigned int num_sets = cache_lines / associativitiy;
+  unsigned int block_bits = 0;
+  unsigned int set_bits = 0;
+
+  unsigned int v = block_size;
+  while (v >>= 1) {
+    block_bits += 1;
+  }
+
+  v = num_sets;
+  while (v >>= 1) {
+    set_bits += 1;
+  }
+
+  unsigned int tag_bits = 32 - block_bits - set_bits;
+
+  this->tag_bits = tag_bits;
+  this->set_bits = set_bits;
+  this->block_bits = block_bits;
+
+  this->block_mask = (1 << block_bits) - 1;
+  this->set_mask = ((1 << set_bits) - 1) << block_bits;
+  this->tag_mask = ((1 << tag_bits) - 1) << block_bits << set_bits;
+
+  unsigned int set_id = 0;
+  for (auto i = 0; i < num_sets; i++) {
+    std::vector<CacheLine> lines;
+    for (auto j = 0; j < associativitiy; j++) {    
+      CacheLine line = CacheLine(block_size, tag_bits, block_bits);
+      lines.push_back(line);
+    }
+    CacheSet set = CacheSet(set_id, tag_bits, set_bits, lines, prog_mem);
+    sets.push_back(set);
+    set_id += 1;
+  }
 }
 
 unsigned int NWayCache::readByte(unsigned int address, unsigned char& outByte) {
@@ -93,11 +93,56 @@ unsigned int NWayCache::writeByte(unsigned int address, unsigned char byte) {
 }
 
 unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
-   outWord = *(unsigned int*)(prog_mem + address);
-   return 8;
+   // detect split block reads
+   auto set_id = get_set_id(address);
+   unsigned int second_addr = 0;
+   unsigned int second_addr_bytes = split_blocks(address, second_addr);
+   unsigned int first_addr_bytes = 4 - second_addr_bytes;
 
+   outWord = 0;
+   
+   
+   unsigned int first_timing = 0;
    for (CacheSet& set : sets) {
+     if (set.get_set() != set_id) {
+       continue;
+     }
+
+     unsigned int readWord = 0;
+     unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
+     auto timing = set.readWord(tag, address & block_mask, readWord);
+
+     unsigned long p1_mask = 1;
+     p1_mask = (p1_mask << (first_addr_bytes * 8)) - 1;
+     unsigned int part1 = readWord & p1_mask;
+     part1 = part1 << (second_addr_bytes * 8);
+     outWord = readWord;
+     break;
    }
+
+   if (second_addr_bytes == 0) {
+     // TODO: Calculate timing
+     return 8;
+   }
+
+   set_id = get_set_id(second_addr);
+   // fetch second block
+   for (CacheSet& set : sets) {
+     if (set.get_set() != set_id) {
+       continue;
+     }
+
+     unsigned int readWord = 0;
+     unsigned int tag = (second_addr & tag_mask) >> (32 - tag_bits);
+     auto second_timing = set.readWord(tag, second_addr & block_mask, readWord);
+
+     outWord |= (readWord & (1 << (second_addr_bytes * 8)) - 1) << (first_addr_bytes * 8);
+
+     // TODO: Calculate timing
+     return 10;
+   }
+
+   throw std::runtime_error("Failed to find matching set in cache!!");
 }
 
 unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
@@ -109,10 +154,19 @@ unsigned int NWayCache::get_set_id(unsigned int address) {
   return (address & set_mask) >> block_bits;
 }
 
-unsigned char NWayCache::split_bits(unsigned int address, unsigned int& outSecondAddr) {
+unsigned char NWayCache::split_blocks(unsigned int address, unsigned int& outSecondAddr) {
   unsigned int block_address = address & block_mask;
+
+  // not near the end of a block, so no splitting needed
+  if (block_mask - block_address >= 3) {
+    outSecondAddr = 0;
+    return 0;
+  }
+
+  unsigned char num_bytes = 3 - (block_mask - block_address);
+  outSecondAddr = (address & (~block_mask)) + (1 << block_bits);
   
-  
+  return num_bytes;
 }
 
 // CacheSet

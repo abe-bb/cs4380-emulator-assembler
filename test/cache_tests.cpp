@@ -324,8 +324,84 @@ TEST(NWayCache, FullyAssociativeWriteFlushRead) {
   }
 }
 
+TEST(NWayCache, ReadWord) {
+  unsigned char* prog_mem = new unsigned char[128];
 
+  for (auto i = 0; i < 128; i++) {
+    prog_mem[i] = i;
+  }
 
+  NWayCache dm_cache = NWayCache(prog_mem, 4, 2, 1);
+
+  unsigned int outWord = 0;
+
+  // single block read
+  dm_cache.readWord(0, outWord);
+  ASSERT_EQ(0x03020100, outWord);
+
+  // second single block read
+  dm_cache.readWord(8, outWord);
+  ASSERT_EQ(0x0b0a0908, outWord);
+
+}
+
+TEST(NWayCache, ReadWordSplitBlock) {
+  unsigned char* prog_mem = new unsigned char[128];
+
+  for (auto i = 0; i < 128; i++) {
+    prog_mem[i] = i;
+  }
+
+  NWayCache dm_cache = NWayCache(prog_mem, 4, 2, 1);
+
+  unsigned int outWord = 0;
+
+  // split block read
+  dm_cache.readWord(1, outWord);
+  ASSERT_EQ(0x04030201, outWord);
+}
+
+TEST(NWayCache, SplitBlockTest) {
+  unsigned char* prog_mem = new unsigned char[128];
+
+  for (auto i = 0; i < 128; i++) {
+    prog_mem[i] = 0;
+  }
+
+  NWayCache dm_cache = NWayCache(prog_mem, 4, 2, 1);
+
+  // 1 byte from block 1, 3 from block 2
+  unsigned int address = 0x3;
+  unsigned int second = 0;
+  unsigned char num_second = dm_cache.split_blocks(address, second);
+
+  ASSERT_EQ(0x4, second);
+  ASSERT_EQ(3, num_second);
+
+  // 2 bytes from block 1, 2 from block 2
+  address = 0x2;
+  second = 0;
+  num_second = dm_cache.split_blocks(address, second);
+
+  ASSERT_EQ(0x4, second);
+  ASSERT_EQ(2, num_second);
+
+  // 3 bytes from block 1, 1 from block 2
+  address = 0x1;
+  second = 0;
+  num_second = dm_cache.split_blocks(address, second);
+
+  ASSERT_EQ(0x4, second);
+  ASSERT_EQ(1, num_second);
+
+  // 4 bytes from block 1, 0 from block 2
+  address = 0x0;
+  second = 100;
+  num_second = dm_cache.split_blocks(address, second);
+
+  ASSERT_EQ(0, second);
+  ASSERT_EQ(0, num_second);
+}
 
 
 

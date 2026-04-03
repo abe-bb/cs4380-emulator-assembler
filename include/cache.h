@@ -90,6 +90,11 @@ class NWayCache : Cache {
     unsigned int readWord(unsigned int address, unsigned int &outWord) override;
     unsigned int writeWord(unsigned int address, unsigned int word) override;
 
+    // returns the set_id portion of the address
+    unsigned int get_set_id(unsigned int address);
+    // outSecondAddr will the address of the second block, returns the number
+    // of bytes in the word that are in the second block
+    unsigned char split_blocks(unsigned int address, unsigned int& outSecondAddr);
   private:
     std::vector<CacheSet> sets;
 
@@ -99,11 +104,5 @@ class NWayCache : Cache {
 
     unsigned int tag_mask;
     unsigned int set_mask;
-    unsigned int block_mask;
-    
-    // returns the set_id portion of the address
-    unsigned int get_set_id(unsigned int address);
-    // outSecondAddr will the address of the second block, returns the number
-    // of bytes in the word that are in the second block
-    unsigned char split_bits(unsigned int address, unsigned int& outSecondAddr);
+    unsigned int block_mask;  
 };
