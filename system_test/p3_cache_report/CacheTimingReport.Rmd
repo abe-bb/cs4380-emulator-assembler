@@ -1,0 +1,31 @@
+---
+title: "Cache Timing Report"
+output: html_document
+author: Abe Clements
+date: April 3, 2026 
+---
+
+# Test Programs
+
+##### Program A
+This program stores 10000 in R9 and 1 in R8, then subtracts R8 from R9, storing 
+the result in R9. Each of these subtractions is stored as an individual
+instruction.
+
+##### Program B
+This program performs the same functionality as program A, but does so using a
+loop instead of repeated instructions.
+
+##### Program C
+This program loads a pseudo-random byte from memory 10000 times in a loop.
+
+##### Program D
+This program loads a psuedo-random integer from memory 10000 times in a loop.
+
+##### Program E
+This program loads bytes 10000 to 1 sequentially in a loop.
+
+##### Program F
+This program performs 10000 jumps, jumping all over the stored program to
+psuedo-random locations.
+
