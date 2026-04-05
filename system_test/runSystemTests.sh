@@ -241,3 +241,15 @@ else
   echo -e "${NONE}$program_output"
   echo -e "${RED}RESULT: failed${NONE}"
 fi
+
+# Test three writes with direct mapped cache
+program_output="$(../build/emu4380 ./timing/write_3_words.bin -c 1)"
+exit_code=$?
+echo -e "${GREEN}TEST: 3 writes with dm cache timing"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 53" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+

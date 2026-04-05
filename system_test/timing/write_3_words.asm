@@ -1,0 +1,8 @@
+ONE   .INT #1
+TWO   .INT #2
+THREE .INT #3
+
+  STR R0, ONE
+  STR R0, TWO
+  STR R0, THREE
+  TRP #0
