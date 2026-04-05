@@ -12,6 +12,7 @@ enum CacheType {
     DirectMapped = 1,
     FullyAssociative = 2,
     SetAssociative2Way = 3,
+    Custom = 4,
 };
 
 class Args {
@@ -20,8 +21,14 @@ class Args {
         unsigned int mem_size;
         CacheType cache_type;
 
-        Args(std::string bin_file, unsigned int mem_size, CacheType cache_type) :
-             bin_file(bin_file), mem_size(mem_size), cache_type(cache_type) {}
+        unsigned int block_size;
+        unsigned int cache_lines;
+        unsigned int associativity;
+
+        Args(std::string bin_file, unsigned int mem_size, CacheType cache_type,
+             unsigned int block_size, unsigned int cache_lines, unsigned int associativity) :
+             bin_file(bin_file), mem_size(mem_size), cache_type(cache_type), block_size(block_size),
+             cache_lines(cache_lines), associativity(associativity) {}
 };
 
 void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
@@ -40,6 +47,16 @@ void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
 
     // load first 4 bytes into PC register
     reg_file[PC] = *(unsigned int*)prog_mem;
+}
+
+void setup_cache(Args& args) {
+    if (args.cache_type == Custom) {
+        delete cache;
+        cache = new NWayCache(prog_mem, args.block_size, args.cache_lines, args.associativity);
+    }
+    else {
+        init_cache(args.cache_type);
+    }
 }
 
 void emulator_error(unsigned int instruction_addr) {
@@ -88,6 +105,11 @@ Args parse_args(int argc, char* argv[]) {
     std::string bin_file = "";
     unsigned int mem_size = 0b1 << 17;
     CacheType cache_type = NoCache;
+
+    unsigned int block_size = 16;
+    unsigned int cache_lines = 64;
+    unsigned int associativity = 1;
+    
     // parse arguments
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
@@ -99,7 +121,7 @@ Args parse_args(int argc, char* argv[]) {
                 exit(4);
             }
             int c = std::stoi(argv[i]);
-            if (c < 0 || c > 3) {
+            if (c < 0 || c > 4) {
                 std::cout << "Invalid arguments";
                 exit(4);
             }
@@ -119,12 +141,54 @@ Args parse_args(int argc, char* argv[]) {
             }
             mem_size = (unsigned int)c;
         }
+        // parse memory size
+        else if (arg == "-b") {
+            i++;
+            if (i >= argc) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            unsigned long c = std::stoul(argv[i]);
+            if (c > UINT_MAX) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            block_size = (unsigned int)c;
+        }
+        // parse memory size
+        else if (arg == "-l") {
+            i++;
+            if (i >= argc) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            unsigned long c = std::stoul(argv[i]);
+            if (c > UINT_MAX) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            cache_lines = (unsigned int)c;
+        }
+        // parse memory size
+        else if (arg == "-a") {
+            i++;
+            if (i >= argc) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            unsigned long c = std::stoul(argv[i]);
+            if (c > UINT_MAX) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            associativity = (unsigned int)c;
+        }
         else {
             bin_file = std::string(argv[i]);
         }
     }    
 
-    return Args(bin_file, mem_size, cache_type);
+    return Args(bin_file, mem_size, cache_type, block_size, cache_lines, associativity);
 }
 
 int main(int argc, char* argv[]) {
@@ -141,7 +205,7 @@ int main(int argc, char* argv[]) {
     std::vector<unsigned char> program(begin, end);
 
     setup_memory(args.mem_size, program);
-    init_cache(args.cache_type);
+    setup_cache(args);
 
     return emulator_loop();
 }

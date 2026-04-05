@@ -217,3 +217,27 @@ else
   echo -e "${NONE}$program_output"
   echo -e "${RED}RESULT: failed${NONE}"
 fi
+
+# Test Custom huge block Timing 
+program_output="$(../build/emu4380 ./timing/read_8_words.bin -m 1024 -c 4 -b 128 -l 1 -a 1)"
+exit_code=$?
+echo -e "${GREEN}TEST: Simple read huge block timing"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 96" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test Custom tiny block single line timing.
+# Every read must first fetch into the cache. Should be equivalent to
+# no cache, but with the addition of a hit penalty on every read 208 + 26 = 234
+program_output="$(../build/emu4380 ./timing/read_8_words.bin -m 1024 -c 4 -b 4 -l 1 -a 1)"
+exit_code=$?
+echo -e "${GREEN}TEST: tiny block single line timing"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 234" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
