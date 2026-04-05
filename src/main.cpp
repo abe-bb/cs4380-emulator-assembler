@@ -1,9 +1,28 @@
+#include <climits>
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <iterator>
+#include <string>
 #include <vector>
 #include "../include/emu4380.h"
+
+enum CacheType {
+    NoCache = 0,
+    DirectMapped = 1,
+    FullyAssociative = 2,
+    SetAssociative2Way = 3,
+};
+
+class Args {
+    public:
+        std::string bin_file;
+        unsigned int mem_size;
+        CacheType cache_type;
+
+        Args(std::string bin_file, unsigned int mem_size, CacheType cache_type) :
+             bin_file(bin_file), mem_size(mem_size), cache_type(cache_type) {}
+};
 
 void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
     if (program.size() > mem_size) {
@@ -59,35 +78,70 @@ int emulator_loop() {
     }
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cout << "A binary file argument is required\n";
-        return 3;
+Args parse_args(int argc, char* argv[]) {
+
+    if (argc < 2 || argc % 2 != 0) {
+        std::cout << "USAGE emu4380 [-c <cache config>] [-m <memory size>] <binary file>\n";
+        exit(4);
     }
+    
+    std::string bin_file = "";
+    unsigned int mem_size = 0b1 << 17;
+    CacheType cache_type = NoCache;
+    // parse arguments
+    for (int i = 1; i < argc; i++) {
+        std::string arg = std::string(argv[i]);
+        // parse cache type
+        if (arg == "-c") {
+            i++;
+            if (i >= argc) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            int c = std::stoi(argv[i]);
+            if (c < 0 || c > 3) {
+                std::cout << "Invalid arguments";
+                exit(4);
+            }
+            cache_type = static_cast<CacheType>(c);
+        }
+        // parse memory size
+        else if (arg == "-m") {
+            i++;
+            if (i >= argc) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            unsigned long c = std::stoul(argv[i]);
+            if (c > UINT_MAX) {
+                std::cout << "Invalid arguments\n";
+                exit(4);
+            }
+            mem_size = (unsigned int)c;
+        }
+        else {
+            bin_file = std::string(argv[i]);
+        }
+    }    
+
+    return Args(bin_file, mem_size, cache_type);
+}
+
+int main(int argc, char* argv[]) {
+    // parse arguments
+    Args args = parse_args(argc, argv);
+    // std::cout << "Cache Type: " << args.cache_type << "\n"
+    //     << "Memory Size: " << args.mem_size << "\n";
 
     // read file in as bytes
-    std::string in_path(argv[1]);
-    std::ifstream in_file(in_path, std::ios_base::binary);
+    std::ifstream in_file(args.bin_file, std::ios_base::binary);
 
     auto begin = std::istreambuf_iterator<char>(in_file);
     auto end = std::istreambuf_iterator<char>();
     std::vector<unsigned char> program(begin, end);
 
-    // read in second argument as memory size
-    unsigned int mem_size = 0b1 << 17;
-    unsigned int cache_config = 0;
-    if (argc >= 3) {
-        std::string in_mem_size = argv[2];
-
-        unsigned int potential_mem_size = 0;
-        if (!parse_unsigned_int(in_mem_size, potential_mem_size)) {
-            std::cout << "Invalid memory size. Max memory size is 4294967295.\n" << std::flush;
-            return 4;
-        }
-        mem_size = potential_mem_size;
-    }
-
-    setup_memory(mem_size, program);
+    setup_memory(args.mem_size, program);
+    init_cache(args.cache_type);
 
     return emulator_loop();
 }

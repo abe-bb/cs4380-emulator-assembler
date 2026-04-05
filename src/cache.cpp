@@ -8,6 +8,8 @@ Cache::Cache(unsigned char* prog_mem) {
   this->prog_mem = prog_mem;
 }
 
+Cache::~Cache() {}
+
 unsigned int Cache::readByte(unsigned int address, unsigned char& outByte) {
   outByte = prog_mem[address];
   return 8;
@@ -26,6 +28,34 @@ unsigned int Cache::readWord(unsigned int address, unsigned int& outWord) {
 unsigned int Cache::writeWord(unsigned int address, unsigned int word) {
   *(unsigned int*)(prog_mem + address) = word;
   return 8;
+}
+
+
+// CacheTime
+CacheTime::CacheTime() : hits(1), words_stored(0), words_loaded(0) {}
+
+unsigned int CacheTime::calculate_timing() {
+  unsigned int mem_timing = hits;
+
+  if (words_stored != 0) {
+    mem_timing += 8;
+    words_stored -= 1;
+    mem_timing += words_stored * 2;
+  }
+
+  if (words_loaded != 0) {
+    mem_timing += 8;
+    words_loaded -= 1;
+    mem_timing += words_loaded * 2;
+  }
+
+  return mem_timing;
+}
+
+void CacheTime::add(CacheTime other) {
+  hits += other.hits;
+  words_stored += other.words_stored;
+  words_loaded += other.words_loaded;
 }
 
 
@@ -95,8 +125,8 @@ unsigned int NWayCache::readByte(unsigned int address, unsigned char& outByte) {
     auto timing = set.readWord(tag, address & block_mask, readWord);
 
     outByte = readWord & 0xFF;
-    // TODO: calculate timing
-    return 8;
+
+    return timing.calculate_timing();
   }
 
   throw std::runtime_error("Failed to find matching set in cache!!");
@@ -113,8 +143,7 @@ unsigned int NWayCache::writeByte(unsigned int address, unsigned char byte) {
     unsigned int tag = (address & tag_mask) >> (32 - tag_bits);
     auto timing = set.writeWord(tag, address & block_mask, byte, 1);
 
-    // TODO: calculate timing
-    return 8;
+    return timing.calculate_timing();
   }
 
   throw std::runtime_error("Failed to find matching set in cache!!");
@@ -129,7 +158,7 @@ unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
 
   outWord = 0;
 
-  unsigned int first_timing = 0;
+  CacheTime first_timing = CacheTime();
   for (CacheSet& set : sets) {
    if (set.get_set() != set_id) {
      continue;
@@ -148,8 +177,7 @@ unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
   }
 
   if (second_addr_bytes == 0) {
-   // TODO: Calculate timing
-   return 8;
+   return first_timing.calculate_timing();
   }
 
   set_id = get_set_id(second_addr);
@@ -165,8 +193,8 @@ unsigned int NWayCache::readWord(unsigned int address, unsigned int& outWord) {
 
    outWord |= (readWord & (1 << (second_addr_bytes * 8)) - 1) << (first_addr_bytes * 8);
 
-   // TODO: Calculate timing
-   return 10;
+   first_timing.add(second_timing);
+   return first_timing.calculate_timing();
   }
 
    throw std::runtime_error("Failed to find matching set in cache!!");
@@ -179,7 +207,7 @@ unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
    unsigned int second_addr_bytes = split_blocks(address, second_addr);
    unsigned int first_addr_bytes = 4 - second_addr_bytes;
 
-   unsigned int first_timing = 0;
+   CacheTime first_timing = CacheTime();
    for (CacheSet& set : sets) {
      if (set.get_set() != set_id) {
        continue;
@@ -191,8 +219,7 @@ unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
    }
    
    if (second_addr_bytes == 0) {
-     // TODO: Calculate timing
-     return 8;
+     return first_timing.calculate_timing();
    }
 
    set_id = get_set_id(second_addr);
@@ -206,8 +233,8 @@ unsigned int NWayCache::writeWord(unsigned int address, unsigned int word) {
      unsigned int b2_word = word >> (first_addr_bytes * 8);
      auto second_timing = set.writeWord(tag, second_addr & block_mask, b2_word, second_addr_bytes);
 
-     // TODO: Calculate timing
-     return 10;
+     first_timing.add(second_timing);
+     return first_timing.calculate_timing();
    }
 
   throw std::runtime_error("Failed to find matching set in cache!!");
@@ -249,23 +276,24 @@ unsigned int CacheSet::get_set() {
   return set;
 }
 
-unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int& outWord) {
+CacheTime CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int& outWord) {
   counter += 1;
+  CacheTime timing = CacheTime();
 
   unsigned long lru_num = ULONG_MAX;
   CacheLine* lru_line = &lines.front();
   for (CacheLine& line : lines) {
     // found uninitialized block
     if (!line.isValid()) {
-      line.load_block(prog_mem, tag, set);
+      line.load_block(prog_mem, tag, set, timing);
       outWord = line.readWord(bo, counter);
-      return 0;
+      return timing;
     }
 
     // found matching block
     if (line.get_tag() == tag) {
       outWord = line.readWord(bo, counter);
-      return 0;
+      return timing;
     }
 
     // track lru cache line
@@ -276,30 +304,31 @@ unsigned int CacheSet::readWord(unsigned int tag, unsigned int bo, unsigned int&
   }
 
   // if we get here, the tag did not match any cached blocks
-  lru_line->write_block(prog_mem, set);
-  lru_line->load_block(prog_mem, tag, set);
+  lru_line->write_block(prog_mem, set, timing);
+  lru_line->load_block(prog_mem, tag, set, timing);
 
   outWord = lru_line->readWord(bo, counter);
-  return 0;
+  return timing;
 }
 
-unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int word, unsigned char num_bytes) {
+CacheTime CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int word, unsigned char num_bytes) {
   counter += 1;
+  CacheTime timing = CacheTime();
 
   unsigned long lru_num = ULONG_MAX;
   CacheLine* lru_line = &lines.front();
   for (CacheLine& line : lines) {
     // found uninitialized block
     if (!line.isValid()) {
-      line.load_block(prog_mem, tag, set);
+      line.load_block(prog_mem, tag, set, timing);
       line.writeWord(bo, word, counter, num_bytes);
-      return 0;
+      return timing;
     }
 
     // found matching block
     if (line.get_tag() == tag) {
       line.writeWord(bo, word, counter, num_bytes);
-      return 0;
+      return timing;
     }
 
     // track lru cache line
@@ -310,11 +339,11 @@ unsigned int CacheSet::writeWord(unsigned int tag, unsigned int bo, unsigned int
   }
 
   // if we get here, the tag did not match any cached blocks
-  lru_line->write_block(prog_mem, set);
-  lru_line->load_block(prog_mem, tag, set);
+  lru_line->write_block(prog_mem, set, timing);
+  lru_line->load_block(prog_mem, tag, set, timing);
 
   lru_line->writeWord(bo, word, counter, num_bytes);
-  return 0;
+  return timing;
 }
 
 
@@ -387,7 +416,7 @@ void CacheLine::writeWord(unsigned int block_offset, unsigned int word, unsigned
   return;
 }
 
-void CacheLine::write_block(unsigned char* prog_mem, unsigned int set) {
+void CacheLine::write_block(unsigned char* prog_mem, unsigned int set, CacheTime& timing) {
   // if nothing changed no need to write back 
   if (!changed) {
     return;
@@ -398,9 +427,11 @@ void CacheLine::write_block(unsigned char* prog_mem, unsigned int set) {
   for (auto i = 0; i < block.size(); i++) {
     prog_mem[block_address + i] = block[i];
   }
+
+  timing.words_stored += block.size() / 4;
 }
 
-void CacheLine::load_block(unsigned char* prog_mem, unsigned int tag, unsigned int set) {
+void CacheLine::load_block(unsigned char* prog_mem, unsigned int tag, unsigned int set, CacheTime& timing) {
   valid = true;
   changed = false;
 
@@ -412,6 +443,8 @@ void CacheLine::load_block(unsigned char* prog_mem, unsigned int tag, unsigned i
   for (auto i = 0; i < block.size(); i++) {
     block[i] = prog_mem[block_address + i];
   }
+
+  timing.words_loaded += block.size() / 4;
 }
 
 unsigned int CacheLine::assemble_block_address(unsigned int tag, unsigned int set) {

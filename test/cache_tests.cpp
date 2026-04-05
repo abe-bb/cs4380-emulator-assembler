@@ -66,6 +66,7 @@ TEST(CacheLine, Construction) {
 TEST(CacheLine, ReadsMemoryCorrectly) {
   CacheLine line = CacheLine(64, 26, 6);
   unsigned char* prog_mem = new unsigned char[128];
+  CacheTime timing = CacheTime();
 
   // place values in memory
   for (auto i = 0; i < 128; i++) {
@@ -73,7 +74,8 @@ TEST(CacheLine, ReadsMemoryCorrectly) {
   }
 
   // read the first 64 bytes into the cache block
-  line.load_block(prog_mem, 0, 0);
+  line.load_block(prog_mem, 0, 0, timing);
+  ASSERT_EQ(16, timing.words_loaded);
 
   for (auto i = 0; i < 64; i+= 4) {
     unsigned int cache_word = line.readWord(i, 0);
@@ -90,13 +92,16 @@ TEST(CacheLine, ReadsMemoryCorrectly) {
 TEST(CacheLine, WritesMemoryCorrectly) {
   CacheLine line = CacheLine(64, 26, 6);
   unsigned char* prog_mem = new unsigned char[128];
+  CacheTime timing = CacheTime();
+
   // zero out memory
   for (auto i = 0; i < 128; i++) {
     prog_mem[i] = 0;
   }
 
   // read the first 64 bytes into the cache block
-  line.load_block(prog_mem, 0, 0);
+  line.load_block(prog_mem, 0, 0, timing);
+  ASSERT_EQ(16, timing.words_loaded);
 
   // write values into the cache
   for (auto i = 0; i < 64; i += 4) {
@@ -110,7 +115,8 @@ TEST(CacheLine, WritesMemoryCorrectly) {
   }
 
   // write values back to memory
-  line.write_block(prog_mem, 0);
+  line.write_block(prog_mem, 0, timing);
+  ASSERT_EQ(16, timing.words_stored);
 
   // check values in memory
   for (auto i = 0; i < 64; i++) {
@@ -123,19 +129,23 @@ TEST(CacheLine, WritesMemoryCorrectly) {
 TEST(CacheLine, SimpleWrite) {
   CacheLine line = CacheLine(64, 26, 6);
   unsigned char* prog_mem = new unsigned char[128];
+  CacheTime timing = CacheTime();
+
   // zero out memory
   for (auto i = 0; i < 128; i++) {
     prog_mem[i] = 0;
   }
 
   // read the first 64 bytes into the cache block
-  line.load_block(prog_mem, 0, 0);
+  line.load_block(prog_mem, 0, 0, timing);
+  ASSERT_EQ(16, timing.words_loaded);
 
   // write values into the cache
   line.writeWord(0, 0xAC, 0, 4);
 
   // write values back to memory
-  line.write_block(prog_mem, 0);
+  line.write_block(prog_mem, 0, timing);
+  ASSERT_EQ(16, timing.words_stored);
 
   // check values in memory
   ASSERT_EQ(0xAC, prog_mem[0]);
@@ -152,7 +162,6 @@ TEST(CacheSet, ReadsMemoryCorrectly) {
 
   CacheSet set = CacheSet(0, 26, 0, lines, prog_mem);
 
-
   // place values in memory
   for (auto i = 0; i < 128; i++) {
     prog_mem[i] = i * 2;
@@ -163,7 +172,11 @@ TEST(CacheSet, ReadsMemoryCorrectly) {
     unsigned int bo = i & 0x3F;
     unsigned int tag = i >> 6;
     unsigned int cache_word = 0;
-    unsigned int mem_cycles = set.readWord(tag, bo, cache_word);
+    CacheTime timing = set.readWord(tag, bo, cache_word);
+    if (i == 0 || i == 64) {
+      ASSERT_EQ(16, timing.words_loaded);
+    }
+    ASSERT_EQ(0, timing.words_stored);
 
     ASSERT_EQ(i * 2, cache_word & 0xFF);
     ASSERT_EQ((i + 1) * 2, (cache_word >> 8) & 0xFF);

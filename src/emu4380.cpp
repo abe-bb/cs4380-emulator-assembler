@@ -14,9 +14,12 @@ unsigned int cntrl_regs[5] = {0};
 
 unsigned int mem_cycle_cntr = 0;
 
-Cache cache = Cache(nullptr);
+Cache* cache = new Cache(nullptr);
 
 PostOpFlag flag = NOTHING;
+
+const unsigned int BLOCK_SIZE = 16;
+const unsigned int CACHE_LINES = 64;
 
 bool validate_address(unsigned int address, unsigned int size = 4) {
   return address <= MEM_SIZE - size;
@@ -24,22 +27,22 @@ bool validate_address(unsigned int address, unsigned int size = 4) {
 
 unsigned char readByte(unsigned int address) {
   unsigned char byte;
-  mem_cycle_cntr += cache.readByte(address, byte);
+  mem_cycle_cntr += cache->readByte(address, byte);
   return byte;
 }
 
 unsigned int readWord(unsigned int address) {
   unsigned int word;
-  mem_cycle_cntr += cache.readWord(address, word);
+  mem_cycle_cntr += cache->readWord(address, word);
   return word;
 }
 
 void writeByte(unsigned int address, unsigned char byte) {
-  mem_cycle_cntr += cache.writeByte(address, byte);
+  mem_cycle_cntr += cache->writeByte(address, byte);
 }
 
 void writeWord(unsigned int address, unsigned int word) {
-  mem_cycle_cntr += cache.writeWord(address, word);
+  mem_cycle_cntr += cache->writeWord(address, word);
 }
 
 bool jmp() {
@@ -469,12 +472,23 @@ bool init_mem(unsigned int size) {
 // must be called after init_mem and before any memory access functions
 // are called
 void init_cache(unsigned int cacheType) {
-  if (cacheType == 0) {
-    cache = Cache(prog_mem);
-  }
-  else {
-    throw "init_cache called with unknown cache type!";
-  }
+  delete cache;
+  switch (cacheType) {
+    case 0:
+        cache = new Cache(prog_mem);
+        break;
+    case 1:
+        cache = new NWayCache(prog_mem, BLOCK_SIZE, CACHE_LINES, 1);
+        break;
+    case 2:
+        cache = new NWayCache(prog_mem, BLOCK_SIZE, CACHE_LINES, CACHE_LINES);
+        break;
+    case 3:
+        cache = new NWayCache(prog_mem, BLOCK_SIZE, CACHE_LINES, 2);
+        break;
+    default:
+        throw "init_cache called with unknown cache type!";
+    }
 }
 
 // bool fetch(); // Retrieves the bytes for the current instruction and places

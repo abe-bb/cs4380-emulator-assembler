@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <gtest/gtest.h>
 #include <vector>
-#include <iostream>
 
 #include "../include/emu4380.h"
 
@@ -36,134 +35,157 @@ TEST(Setup, TestMemoryInit) {
 // out of bounds memory fetch should fail
 TEST(Fetch, OutOfBoundsAddressFails) {
   init_mem(1024);
-  init_cache(0);
-  reg_file[PC] = MEM_SIZE + 1;
-  ASSERT_FALSE(fetch());
+
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    reg_file[PC] = MEM_SIZE + 1;
+    ASSERT_FALSE(fetch());
+  }
 }
 
 TEST(Fetch, Last7BytesFetchFails) {
   init_mem(1024);
-  init_cache(0);
-  for (int i = 1; i < 8; i++) {
-    reg_file[PC] = MEM_SIZE - i;
-    ASSERT_FALSE(fetch()) << "fetch succeed with address: " << MEM_SIZE - i << " and MEM_SIZE: " << MEM_SIZE;
+
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    for (int i = 1; i < 8; i++) {
+      reg_file[PC] = MEM_SIZE - i;
+      ASSERT_FALSE(fetch()) << "fetch succeed with address: " << MEM_SIZE - i << " and MEM_SIZE: " << MEM_SIZE;
+    }
   }
 }
 
 // fetch from valid memory location should succeed
 TEST(Fetch, ValidAddressSucceeds) {
   init_mem(1024);
-  init_cache(0);
 
-  // set the program counter to the 5th byte of memory
-  reg_file[PC] = 4;
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
 
-  ASSERT_TRUE(fetch());
+    // set the program counter to the 5th byte of memory
+    reg_file[PC] = 4;
+
+    ASSERT_TRUE(fetch());
+  }
 }
 
 // validate that the bytes placed in the contrrol registers are correct (and in correct little endian order)
 TEST(Fetch, BytesPlacedInCtrlRegs) {
   init_mem(10000);
-  init_cache(0);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
 
-  // set the program counter to the 5th byte of memory
-  reg_file[PC] = 4;
+    // set the program counter to the 5th byte of memory
+    reg_file[PC] = 4;
 
 
-  // set some values o be read into the ctrl registers
-  // operation
-  prog_mem[4] =  0x01;
-  // operand 1
-  prog_mem[5] =  0x02;
-  // operand 2
-  prog_mem[6] =  0x04;
-  // operand 3
-  prog_mem[7] =  0x08;
-  // immediate
-  prog_mem[8] =  0xEF;
-  prog_mem[9] =  0xBE;
-  prog_mem[10] = 0xAD;
-  prog_mem[11] = 0xDE;
+    // set some values o be read into the ctrl registers
+    // operation
+    prog_mem[4] =  0x01;
+    // operand 1
+    prog_mem[5] =  0x02;
+    // operand 2
+    prog_mem[6] =  0x04;
+    // operand 3
+    prog_mem[7] =  0x08;
+    // immediate
+    prog_mem[8] =  0xEF;
+    prog_mem[9] =  0xBE;
+    prog_mem[10] = 0xAD;
+    prog_mem[11] = 0xDE;
 
-  // fetch instruction bytes and place in ctrl registers
-  EXPECT_TRUE(fetch());
+    // fetch instruction bytes and place in ctrl registers
+    EXPECT_TRUE(fetch());
 
-  // check ctrl register values
-  EXPECT_EQ(0x01, cntrl_regs[OPERATION]) << "Operator value incorrectly loaded";
-  EXPECT_EQ(0x02, cntrl_regs[OPERAND_1]) << "Operand 1 value incorrectly loaded";
-  EXPECT_EQ(0x04, cntrl_regs[OPERAND_2]) << "Operand 2 value incorreclty loaded";
-  EXPECT_EQ(0x08, cntrl_regs[OPERAND_3]) << "Operand 3 value incorrectly loaded";
-  EXPECT_EQ(0xDEADBEEF, cntrl_regs[IMMEDIATE]) << "Immediate value incorrectly loaded";
+    // check ctrl register values
+    EXPECT_EQ(0x01, cntrl_regs[OPERATION]) << "Operator value incorrectly loaded";
+    EXPECT_EQ(0x02, cntrl_regs[OPERAND_1]) << "Operand 1 value incorrectly loaded";
+    EXPECT_EQ(0x04, cntrl_regs[OPERAND_2]) << "Operand 2 value incorreclty loaded";
+    EXPECT_EQ(0x08, cntrl_regs[OPERAND_3]) << "Operand 3 value incorrectly loaded";
+    EXPECT_EQ(0xDEADBEEF, cntrl_regs[IMMEDIATE]) << "Immediate value incorrectly loaded";
+  }
 }
 
 TEST(MemTests, ReadByteTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
-  init_cache(0);
-  auto mem_cntr_before = mem_cycle_cntr;
 
-  for (auto addr = 0; addr < mem_size; addr++) {
-    unsigned char mem = rand();
-    prog_mem[addr] = mem;
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    auto mem_cntr_before = mem_cycle_cntr;
 
-    auto result = readByte(addr);
+    for (auto addr = 0; addr < mem_size; addr++) {
+      unsigned char mem = rand();
+      prog_mem[addr] = mem;
 
-    ASSERT_EQ(mem, result);
+      auto result = readByte(addr);
+
+      ASSERT_EQ(mem, result);
+    }
+
+    ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
   }
-
-  ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
 }
 
 TEST(MemTests, ReadWordTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
-  init_cache(0);
-  auto mem_cntr_before = mem_cycle_cntr;
 
-  for (auto addr = 0; addr < mem_size - 3; addr++) {
-    unsigned int mem = rand();
-    *(unsigned int*)(prog_mem + addr) = mem;
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    auto mem_cntr_before = mem_cycle_cntr;
 
-    auto result = readWord(addr);
+    for (auto addr = 0; addr < mem_size - 3; addr++) {
+      unsigned int mem = rand();
+      *(unsigned int*)(prog_mem + addr) = mem;
 
-    ASSERT_EQ(mem, result);
+      auto result = readWord(addr);
+
+      ASSERT_EQ(mem, result);
+    }
+
+    ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
   }
-
-  ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
 }
 
 TEST(MemTests, WriteByteTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
-  init_cache(0);
-  auto mem_cntr_before = mem_cycle_cntr;
 
-  for (auto addr = 0; addr < mem_size; addr++) {
-    unsigned char mem = rand();
-    writeByte(addr, mem);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    auto mem_cntr_before = mem_cycle_cntr;
 
-    auto result = prog_mem[addr];
-    ASSERT_EQ(mem, result);
+    for (auto addr = 0; addr < mem_size; addr++) {
+      unsigned char mem = rand();
+      writeByte(addr, mem);
+
+      auto result = prog_mem[addr];
+      ASSERT_EQ(mem, result);
+    }
+
+    ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
   }
-
-  ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
 }
 
 TEST(MemTests, WriteWordTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
-  init_cache(0);
-  auto mem_cntr_before = mem_cycle_cntr;
 
-  for (auto addr = 0; addr < mem_size - 3; addr++) {
-    unsigned int mem = rand();
-    writeWord(addr, mem);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    auto mem_cntr_before = mem_cycle_cntr;
 
-    auto result = *(unsigned int*)(prog_mem + addr);
-    ASSERT_EQ(mem, result);
+    for (auto addr = 0; addr < mem_size - 3; addr++) {
+      unsigned int mem = rand();
+      writeWord(addr, mem);
+
+      auto result = *(unsigned int*)(prog_mem + addr);
+      ASSERT_EQ(mem, result);
+    }
+
+    ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
   }
-
-  ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
 }
 
 TEST(JumpTests, JumpInstructionEnumValues){
@@ -177,153 +199,168 @@ TEST(JumpTests, JumpInstructionEnumValues){
 
 TEST(JumpTests, JumpBeyondMemoryFails) {
   init_mem(1024);
-  init_cache(0);
-  set_immediate(1024);
-  set_operands(R8);
-  reg_file[R8] = 1024;
 
-  unsigned int jump_ops[] = { JMP, JMR, BNZ, BGT, BLT, BRZ };
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    set_immediate(1024);
+    set_operands(R8);
+    reg_file[R8] = 1024;
 
-  for (auto op : jump_ops) {
-    set_operation(op);
+    unsigned int jump_ops[] = { JMP, JMR, BNZ, BGT, BLT, BRZ };
 
-    EXPECT_FALSE(execute()) << "Operation: " << op << " did not fail when jumping beyond memory!";
+    for (auto op : jump_ops) {
+      set_operation(op);
+
+      EXPECT_FALSE(execute()) << "Operation: " << op << " did not fail when jumping beyond memory!";
+    }
   }
 }
 
 TEST(JumpTests, JumpToLast7BytesFails) {
   init_mem(1024);
-  init_cache(0);
-  set_operands(R8);
 
-  unsigned int jump_ops[] = { JMP, JMR, BNZ, BGT, BLT, BRZ };
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operands(R8);
 
-  for (auto op : jump_ops) {
-    set_operation(op);
+    unsigned int jump_ops[] = { JMP, JMR, BNZ, BGT, BLT, BRZ };
 
-    for (int i = 1; i < 8; i++) {
-      set_immediate(1024 - i);
-      reg_file[R8] = 1024 - i;
+    for (auto op : jump_ops) {
+      set_operation(op);
 
-      ASSERT_FALSE(execute());
+      for (int i = 1; i < 8; i++) {
+        set_immediate(1024 - i);
+        reg_file[R8] = 1024 - i;
+
+        ASSERT_FALSE(execute());
+      }
     }
   }
-
 }
 
 TEST(JumpTests, JMR) {
   init_mem(1024);
-  init_cache(0);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
 
-  set_operation(JMR);
-  set_operands(R9);
-  reg_file[R9] = 10;
+    set_operation(JMR);
+    set_operands(R9);
+    reg_file[R9] = 10;
   
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 10) << "JMR failed to set PC";
+    ASSERT_EQ(reg_file[PC], 10) << "JMR failed to set PC";
+  }
 }
 
 TEST(JumpTests, BNZ) {
   init_mem(1024);
-  init_cache(0);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
 
-  set_operation(BNZ);
-  set_operands(R9);
-  set_immediate(100);
-  reg_file[PC] = 0;
-  reg_file[R9] = 0;
+    set_operation(BNZ);
+    set_operands(R9);
+    set_immediate(100);
+    reg_file[PC] = 0;
+    reg_file[R9] = 0;
   
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 0) << "BNZ set PC when register == 0";
+    ASSERT_EQ(reg_file[PC], 0) << "BNZ set PC when register == 0";
 
+    reg_file[R9] = 1;
 
-  reg_file[R9] = 1;
+    ASSERT_TRUE(execute());
 
-  ASSERT_TRUE(execute());
-
-  ASSERT_EQ(reg_file[PC], 100) << "BNZ failed to set PC when register == 1";
+    ASSERT_EQ(reg_file[PC], 100) << "BNZ failed to set PC when register == 1";
+  }
 }
 
 TEST(JumpTests, BGT) {
   init_mem(1024);
-  init_cache(0);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
 
-  set_operation(BGT);
-  set_operands(R9);
-  set_immediate(111);
-  reg_file[PC] = 0;
-  reg_file[R9] = (unsigned int) -100;
+    set_operation(BGT);
+    set_operands(R9);
+    set_immediate(111);
+    reg_file[PC] = 0;
+    reg_file[R9] = (unsigned int) -100;
   
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 0) << "BGT set PC when register == -100";
+    ASSERT_EQ(reg_file[PC], 0) << "BGT set PC when register == -100";
 
 
-  reg_file[R9] = 1;
+    reg_file[R9] = 1;
 
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 111) << "BGT failed to set PC when register == 1";
+    ASSERT_EQ(reg_file[PC], 111) << "BGT failed to set PC when register == 1";
+  }
 }
 
 TEST(JumpTests, BLT) {
   init_mem(1024);
-  init_cache(0);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
 
-  set_operation(BLT);
-  set_operands(R9);
-  set_immediate(112);
-  reg_file[PC] = 0;
-  reg_file[R9] = 0;
+    set_operation(BLT);
+    set_operands(R9);
+    set_immediate(112);
+    reg_file[PC] = 0;
+    reg_file[R9] = 0;
   
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 0) << "BLT set PC when register == 0";
+    ASSERT_EQ(reg_file[PC], 0) << "BLT set PC when register == 0";
 
 
-  reg_file[R9] = (unsigned int) -1;
+    reg_file[R9] = (unsigned int) -1;
 
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 112) << "BLT failed to set PC when register == -1";
+    ASSERT_EQ(reg_file[PC], 112) << "BLT failed to set PC when register == -1";
+  }
 }
 
 TEST(JumpTests, BRZ) {
   init_mem(1024);
-  init_cache(0);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
 
-  set_operation(BRZ);
-  set_operands(R9);
-  set_immediate(113);
-  reg_file[PC] = 0;
-  reg_file[R9] = 1;
+    set_operation(BRZ);
+    set_operands(R9);
+    set_immediate(113);
+    reg_file[PC] = 0;
+    reg_file[R9] = 1;
   
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 0) << "BRZ set PC when register == 1";
+    ASSERT_EQ(reg_file[PC], 0) << "BRZ set PC when register == 1";
 
 
-  reg_file[R9] = 0;
+    reg_file[R9] = 0;
 
-  ASSERT_TRUE(execute());
+    ASSERT_TRUE(execute());
 
-  ASSERT_EQ(reg_file[PC], 113) << "BRZ failed to set PC when register == 0";
+    ASSERT_EQ(reg_file[PC], 113) << "BRZ failed to set PC when register == 0";
+  }
 }
 
 
 // tests that fetch properly increments PC
 TEST(Fetch, IncrementsPC) {
   init_mem(1024);
-  init_cache(0);
-  reg_file[PC] = 0;
-  ASSERT_TRUE(fetch());
-  EXPECT_EQ(reg_file[PC], 8);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    reg_file[PC] = 0;
+    ASSERT_TRUE(fetch());
+    EXPECT_EQ(reg_file[PC], 8);
+  }
 }
 
 TEST(Decode, SingleDontCareValuesShouldntFail) {
-
   for (auto operation : operations_2operand_1dc) {
     for (unsigned int invalid_operand = 22; invalid_operand < 256; invalid_operand++) {
       set_operation(operation);
@@ -346,8 +383,6 @@ TEST(Decode, DoubleDontCareValuesShouldntFail) {
 }
 
 TEST(Decode, TripleDontCareValuesShouldntFail) {
-  init_mem(1024);
-  init_cache(0);
   set_immediate(0);
 
   for (auto operation : operations_0operand_3dc) {
@@ -530,127 +565,141 @@ TEST(ExecuteCompare, CmpiFunctionality) {
 
 TEST(ExecuteFlow, JumpSetsPC) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(JMP);
-  set_immediate(72);
+  for (auto i = 0; i < 4; i++) {
+    init_cache(i);
+    set_operation(JMP);
+    set_immediate(72);
 
-  EXPECT_TRUE(execute());
-  EXPECT_EQ(72, reg_file[PC]);
+    EXPECT_TRUE(execute());
+    EXPECT_EQ(72, reg_file[PC]);
+  }
 }
 
 TEST(ExecuteFlow, JumpBeyondMemoryFails) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(JMP);
-  set_immediate(1024);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(JMP);
+    set_immediate(1024);
 
-  EXPECT_FALSE(execute());
+    EXPECT_FALSE(execute());
+  }
 }
 
 TEST(ExecuteFlow, JumpToLast7BytesFails) {
   init_mem(1024);
-  init_cache(0);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
 
-  set_operation(JMP);
+    set_operation(JMP);
 
-  for (int i = 1; i < 8; i++) {
-    set_immediate(1024 - i);
-    ASSERT_FALSE(execute());
+    for (int i = 1; i < 8; i++) {
+      set_immediate(1024 - i);
+      ASSERT_FALSE(execute());
+    }
   }
 }
 
 TEST(ExecuteMove, IstrStoresInteger) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(ISTR);
-  set_operands(R7, R8);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(ISTR);
+    set_operands(R7, R8);
 
-  // set address
-  reg_file[R8] = 503;
+    // set address
+    reg_file[R8] = 503;
 
-  // set value to be stored
-  reg_file[R7] = 0x87654321;
+    // set value to be stored
+    reg_file[R7] = 0x87654321;
 
-  EXPECT_TRUE(execute());
+    EXPECT_TRUE(execute());
 
-  auto msg = "ISTR failed to properly store int to memory location. mem: 0x";
+    auto msg = "ISTR failed to properly store int to memory location. mem: 0x";
 
-  // test if the value saved correctly in little endian order
-  EXPECT_EQ(0x21, (int)prog_mem[503]) << msg << std::hex << prog_mem[503];
-  EXPECT_EQ(0x43, (int)prog_mem[504]) << msg << std::hex << prog_mem[504];
-  EXPECT_EQ(0x65, (int)prog_mem[505]) << msg << std::hex << prog_mem[505];
-  EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << prog_mem[506];
+    // test if the value saved correctly in little endian order
+    EXPECT_EQ(0x21, (int)prog_mem[503]) << msg << std::hex << prog_mem[503];
+    EXPECT_EQ(0x43, (int)prog_mem[504]) << msg << std::hex << prog_mem[504];
+    EXPECT_EQ(0x65, (int)prog_mem[505]) << msg << std::hex << prog_mem[505];
+    EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << prog_mem[506];
+  }
 }
 
 TEST(ExecuteMove, IldrLoadsInteger) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(ILDR);
-  set_operands(R7, R8);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(ILDR);
+    set_operands(R7, R8);
 
-  // set address
-  reg_file[R8] = 503;
+    // set address
+    reg_file[R8] = 503;
 
-  // clear R7
-  reg_file[R7] = 0;
+    // clear R7
+    reg_file[R7] = 0;
 
-  // set values to load in memory
-  prog_mem[503] = 0x21;
-  prog_mem[504] = 0x43;
-  prog_mem[505] = 0x65;
-  prog_mem[506] = 0x87;
+    // set values to load in memory
+    prog_mem[503] = 0x21;
+    prog_mem[504] = 0x43;
+    prog_mem[505] = 0x65;
+    prog_mem[506] = 0x87;
 
 
-  EXPECT_TRUE(execute());
+    EXPECT_TRUE(execute());
 
-  auto msg = "ILDR failed to properly load int from memory location\n";
+    auto msg = "ILDR failed to properly load int from memory location\n";
 
-  // test if the value saved correctly in little endian order
-  ASSERT_EQ(0x87654321, reg_file[R7]) << msg;
+    // test if the value saved correctly in little endian order
+    ASSERT_EQ(0x87654321, reg_file[R7]) << msg;
+  }
 }
 
 TEST(ExecuteMove, IstbStoresByte) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(ISTB);
-  set_operands(R7, R8);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(ISTB);
+    set_operands(R7, R8);
 
-  // set address
-  reg_file[R8] = 509;
+    // set address
+    reg_file[R8] = 509;
 
-  // set value to be stored
-  reg_file[R7] = 0xAC;
+    // set value to be stored
+    reg_file[R7] = 0xAC;
 
-  EXPECT_TRUE(execute());
+    EXPECT_TRUE(execute());
 
-  auto msg = "ISTB failed to properly store byte to memory location\n";
+    auto msg = "ISTB failed to properly store byte to memory location\n";
 
-  // test if the value saved correctly in little endian order
-  EXPECT_EQ(0xAC, prog_mem[509]) << msg;
+    // test if the value saved correctly in little endian order
+    EXPECT_EQ(0xAC, prog_mem[509]) << msg;
+  }
 }
 
 TEST(ExecuteMove, IldbLoadsByte) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(ILDB);
-  set_operands(R7, R8);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(ILDB);
+    set_operands(R7, R8);
 
-  // set address
-  reg_file[R8] = 510;
+    // set address
+    reg_file[R8] = 510;
 
-  // clear R7
-  reg_file[R7] = 0;
+    // clear R7
+    reg_file[R7] = 0;
 
-  // set values to load in memory
-  prog_mem[510] = 0xAD;
+    // set values to load in memory
+    prog_mem[510] = 0xAD;
 
 
-  EXPECT_TRUE(execute());
+    EXPECT_TRUE(execute());
 
-  auto msg = "ILDB failed to properly load byte from memory location\n";
+    auto msg = "ILDB failed to properly load byte from memory location\n";
 
-  // test if the value saved correctly in little endian order
-  ASSERT_EQ(0xAD, reg_file[R7]) << msg;
+    // test if the value saved correctly in little endian order
+    ASSERT_EQ(0xAD, reg_file[R7]) << msg;
+  }
 }
 
 TEST(ExecuteMove, MovCopiesContents) {
@@ -663,8 +712,6 @@ TEST(ExecuteMove, MovCopiesContents) {
 }
 
 TEST(ExecuteMove, MoviPutsImmediateInRegister) {
-  init_mem(1024);
-  init_cache(0);
   set_operation(MOVI);
   set_operands(R5);
   set_immediate(0x45FA78ED);
@@ -678,184 +725,209 @@ TEST(ExecuteMove, MoviPutsImmediateInRegister) {
 
 TEST(ExecuteMove, LdaPlacesAddressInRegister) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(LDA);
-  set_operands(R6);
-  set_immediate(157);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(LDA);
+    set_operands(R6);
+    set_immediate(157);
 
-  prog_mem[157] = 255;
+    prog_mem[157] = 255;
 
-  EXPECT_TRUE(execute());
+    EXPECT_TRUE(execute());
 
-  ASSERT_EQ(157, reg_file[R6]) << "LDA failed to load memory contents to register";
+    ASSERT_EQ(157, reg_file[R6]) << "LDA failed to load memory contents to register";
+  }
 }
 
 // loads the value from memory into a register
 TEST(ExecuteMove, TestLDA32BitLoad) {
   init_mem(1024);
-  init_cache(0);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
 
+    set_operation(LDA);
+    set_operands(R0);
+    set_immediate(0xDEADBEEF);
 
-  set_operation(LDA);
-  set_operands(R0);
-  set_immediate(0xDEADBEEF);
-
-  ASSERT_TRUE(execute());
-  EXPECT_EQ(0xDEADBEEF, reg_file[R0]);
+    ASSERT_TRUE(execute());
+    EXPECT_EQ(0xDEADBEEF, reg_file[R0]);
+  }
 }
 
 TEST(ExecuteMove, StrStoresIntToMemory) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(STR);
-  set_operands(R7);
-  set_immediate(503);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(STR);
+    set_operands(R7);
+    set_immediate(503);
 
-  // set value to be stored
-  reg_file[R7] = 0x87654321;
+    // set value to be stored
+    reg_file[R7] = 0x87654321;
 
-  EXPECT_TRUE(execute());
+    EXPECT_TRUE(execute());
 
-  auto msg = "STR failed to properly store int to memory location. mem: 0x";
+    auto msg = "STR failed to properly store int to memory location. mem: 0x";
 
-  // test if the value saved correctly in little endian order
-  EXPECT_EQ(0x21, (int)prog_mem[503]) << msg << std::hex << (int)prog_mem[503];
-  EXPECT_EQ(0x43, (int)prog_mem[504]) << msg << std::hex << (int)prog_mem[504];
-  EXPECT_EQ(0x65, (int)prog_mem[505]) << msg << std::hex << (int)prog_mem[505];
-  EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << (int)prog_mem[506];
+    // test if the value saved correctly in little endian order
+    EXPECT_EQ(0x21, (int)prog_mem[503]) << msg << std::hex << (int)prog_mem[503];
+    EXPECT_EQ(0x43, (int)prog_mem[504]) << msg << std::hex << (int)prog_mem[504];
+    EXPECT_EQ(0x65, (int)prog_mem[505]) << msg << std::hex << (int)prog_mem[505];
+    EXPECT_EQ(0x87, (int)prog_mem[506]) << msg << std::hex << (int)prog_mem[506];
+  }
 }
 
 TEST(ExecuteMove, StrFailsBeyondMemory) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(STR);
-  set_operands(R6);
-  set_immediate(1024);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(STR);
+    set_operands(R6);
+    set_immediate(1024);
 
-  ASSERT_FALSE(execute());
+    ASSERT_FALSE(execute());
+  }
 }
 
 TEST(ExecuteMove, StrFailsLast3Addresses) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(STR);
-  set_operands(R6);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(STR);
+    set_operands(R6);
 
   
-  for (int i = 3; i<4; i++) {
-    set_immediate(1024 - i);
-    ASSERT_FALSE(execute());
+    for (int i = 3; i<4; i++) {
+      set_immediate(1024 - i);
+      ASSERT_FALSE(execute());
+    }
   }
 }
 
 
 TEST(ExecuteMove, TestLdr) {
   init_mem(1024);
-  init_cache(0);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
 
-  prog_mem[60] = 0x21;
-  prog_mem[61] = 0x43;
-  prog_mem[62] = 0x65;
-  prog_mem[63] = 0x87;
+    prog_mem[60] = 0x21;
+    prog_mem[61] = 0x43;
+    prog_mem[62] = 0x65;
+    prog_mem[63] = 0x87;
 
-  set_operation(LDR);
-  set_operands(R0);
-  set_immediate(60);
+    set_operation(LDR);
+    set_operands(R0);
+    set_immediate(60);
 
-  ASSERT_TRUE(execute());
-  // check 0x87654321 interpreted as two's compliment
-  EXPECT_EQ(-2023406815, (int) reg_file[R0]);
+    ASSERT_TRUE(execute());
+    // check 0x87654321 interpreted as two's compliment
+    EXPECT_EQ(-2023406815, (int) reg_file[R0]);
+  }
 }
 
 TEST(ExecuteMove, LdrFailsBeyondMemory) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(LDR);
-  set_operands(R6);
-  set_immediate(1024);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(LDR);
+    set_operands(R6);
+    set_immediate(1024);
 
-  ASSERT_FALSE(execute());
+    ASSERT_FALSE(execute());
+  }
 }
 
 TEST(ExecuteMove, LdrFailsLast3Addresses) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(LDR);
-  set_operands(R6);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(LDR);
+    set_operands(R6);
 
   
-  for (int i = 3; i<4; i++) {
-    set_immediate(1024 - i);
-    ASSERT_FALSE(execute());
+    for (int i = 3; i<4; i++) {
+      set_immediate(1024 - i);
+      ASSERT_FALSE(execute());
+    }
   }
 }
 
 TEST(ExecuteMove, TestStb) {
   init_mem(1024);
-  init_cache(0);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
 
-  reg_file[R0] = 0xCD;
+    reg_file[R0] = 0xCD;
 
-  set_operation(STB);
-  set_operands(R0);
-  set_immediate(60);
+    set_operation(STB);
+    set_operands(R0);
+    set_immediate(60);
 
-  ASSERT_TRUE(execute());
-  EXPECT_EQ(0xCD, prog_mem[60]);
+    ASSERT_TRUE(execute());
+    EXPECT_EQ(0xCD, prog_mem[60]);
+  }
 }
 
 TEST(ExecuteMove, TestStbStores1Byte) {
   init_mem(1024);
-  init_cache(0);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
 
-  reg_file[R0] = 0x87654321;
+    reg_file[R0] = 0x87654321;
 
-  set_operation(STB);
-  set_operands(R0);
-  set_immediate(60);
+    set_operation(STB);
+    set_operands(R0);
+    set_immediate(60);
 
-  ASSERT_TRUE(execute());
-  EXPECT_EQ(0x21, prog_mem[60]);
-  EXPECT_EQ(0, prog_mem[61]);
-  EXPECT_EQ(0, prog_mem[62]);
-  EXPECT_EQ(0, prog_mem[63]);
-  EXPECT_EQ(0, prog_mem[57]);
-  EXPECT_EQ(0, prog_mem[58]);
-  EXPECT_EQ(0, prog_mem[59]);
+    ASSERT_TRUE(execute());
+    EXPECT_EQ(0x21, prog_mem[60]);
+    EXPECT_EQ(0, prog_mem[61]);
+    EXPECT_EQ(0, prog_mem[62]);
+    EXPECT_EQ(0, prog_mem[63]);
+    EXPECT_EQ(0, prog_mem[57]);
+    EXPECT_EQ(0, prog_mem[58]);
+    EXPECT_EQ(0, prog_mem[59]);
+  }
 }
 
 TEST(ExecuteMove, StbFailsBeyondMemory) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(STB);
-  set_operands(R6);
-  set_immediate(1024);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(STB);
+    set_operands(R6);
+    set_immediate(1024);
 
-  ASSERT_FALSE(execute());
+    ASSERT_FALSE(execute());
+  }
 }
 
 TEST(ExecuteMove, TestLdb) {
   init_mem(1024);
-  init_cache(0);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
 
-  prog_mem[60] = 0xCD;
+    prog_mem[60] = 0xCD;
 
-  set_operation(LDB);
-  set_operands(R0);
-  set_immediate(60);
+    set_operation(LDB);
+    set_operands(R0);
+    set_immediate(60);
 
-  ASSERT_TRUE(execute());
-  EXPECT_EQ(0xCD, reg_file[R0]);
+    ASSERT_TRUE(execute());
+    EXPECT_EQ(0xCD, reg_file[R0]);
+  }
 }
 
 TEST(ExecuteMove, LdbFailsBeyondMemory) {
   init_mem(1024);
-  init_cache(0);
-  set_operation(LDB);
-  set_operands(R6);
-  set_immediate(1024);
+  for (auto cache_t = 0; cache_t < 4; cache_t++) {
+    init_cache(cache_t);
+    set_operation(LDB);
+    set_operands(R6);
+    set_immediate(1024);
 
-  ASSERT_FALSE(execute());
+    ASSERT_FALSE(execute());
+  }
 }
 
 TEST(ExecuteMath, TestADD) {
@@ -1097,151 +1169,167 @@ TEST(ExecuteTRP, ExecuteTrpNeverExits) {
 // ISTR
 TEST(PeerTest, TestIstrInstruction) {
     init_mem(1024);
-    init_cache(0);
-    reg_file[R1] = 0xAABBCCDD;
-    reg_file[R2] = 100;
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      reg_file[R1] = 0xAABBCCDD;
+      reg_file[R2] = 100;
 
-    cntrl_regs[OPERATION] = ISTR;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[OPERAND_2] = R2;
+      cntrl_regs[OPERATION] = ISTR;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[OPERAND_2] = R2;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(prog_mem[100], 0xDD);
-    EXPECT_EQ(prog_mem[101], 0xCC);
-    EXPECT_EQ(prog_mem[102], 0xBB);
-    EXPECT_EQ(prog_mem[103], 0xAA);
+      EXPECT_EQ(prog_mem[100], 0xDD);
+      EXPECT_EQ(prog_mem[101], 0xCC);
+      EXPECT_EQ(prog_mem[102], 0xBB);
+      EXPECT_EQ(prog_mem[103], 0xAA);
+    }
 }
 
 // ILDR
 TEST(PeerTest, TestIldrInstruction) {
     init_mem(1024);
-    init_cache(0);
-    prog_mem[200] = 0x11;
-    prog_mem[201] = 0x22;
-    prog_mem[202] = 0x33;
-    prog_mem[203] = 0x44;
-    reg_file[R2] = 200;
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      prog_mem[200] = 0x11;
+      prog_mem[201] = 0x22;
+      prog_mem[202] = 0x33;
+      prog_mem[203] = 0x44;
+      reg_file[R2] = 200;
 
-    cntrl_regs[OPERATION] = ILDR;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[OPERAND_2] = R2;
+      cntrl_regs[OPERATION] = ILDR;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[OPERAND_2] = R2;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(reg_file[R1], 0x44332211u);
+      EXPECT_EQ(reg_file[R1], 0x44332211u);
+    }
 }
 
 // ISTB
 TEST(PeerTest, TestIstbInstruction) {
     init_mem(1024);
-    init_cache(0);
-    reg_file[R1] = 0xAABBCCDD;
-    reg_file[R2] = 300;
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      reg_file[R1] = 0xAABBCCDD;
+      reg_file[R2] = 300;
 
-    cntrl_regs[OPERATION] = ISTB;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[OPERAND_2] = R2;
+      cntrl_regs[OPERATION] = ISTB;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[OPERAND_2] = R2;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(prog_mem[300], 0xDD);
+      EXPECT_EQ(prog_mem[300], 0xDD);
+    }
 }
 
 // ILDB
 TEST(PeerTest, TestIldbInstruction) {
     init_mem(1024);
-    init_cache(0);
-    prog_mem[400] = 0xAB;
-    reg_file[R2] = 400;
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      prog_mem[400] = 0xAB;
+      reg_file[R2] = 400;
 
-    cntrl_regs[OPERATION] = ILDB;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[OPERAND_2] = R2;
+      cntrl_regs[OPERATION] = ILDB;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[OPERAND_2] = R2;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(reg_file[R1], 0xABu);
+      EXPECT_EQ(reg_file[R1], 0xABu);
+    }
 }
 
 // JMR
 TEST(PeerTest, TestJmrInstruction) {
     init_mem(1024);
-    init_cache(0);
-    reg_file[R1] = 256;
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      reg_file[R1] = 256;
 
-    cntrl_regs[OPERATION] = JMR;
-    cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[OPERATION] = JMR;
+      cntrl_regs[OPERAND_1] = R1;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(reg_file[PC], 256u);
+      EXPECT_EQ(reg_file[PC], 256u);
+    }
 }
 
 // BNZ
 TEST(PeerTest, TestBnzInstruction) {
     init_mem(1024);
-    init_cache(0);
-    reg_file[R1] = 5;
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      reg_file[R1] = 5;
 
-    cntrl_regs[OPERATION] = BNZ;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[IMMEDIATE] = 300;
+      cntrl_regs[OPERATION] = BNZ;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[IMMEDIATE] = 300;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(reg_file[PC], 300u);
+      EXPECT_EQ(reg_file[PC], 300u);
+    }
 }
 
 // BGT
 TEST(PeerTest, TestBgtInstruction) {
     init_mem(1024);
-    init_cache(0);
-    reg_file[R1] = static_cast<unsigned int>(10);
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      reg_file[R1] = static_cast<unsigned int>(10);
 
-    cntrl_regs[OPERATION] = BGT;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[IMMEDIATE] = 400;
+      cntrl_regs[OPERATION] = BGT;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[IMMEDIATE] = 400;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(reg_file[PC], 400u);
+      EXPECT_EQ(reg_file[PC], 400u);
+    }
 }
 
 // BLT
 TEST(PeerTest, TestBltInstruction) {
     init_mem(1024);
-    init_cache(0);
-    reg_file[R1] = static_cast<unsigned int>(-3);
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      reg_file[R1] = static_cast<unsigned int>(-3);
 
-    cntrl_regs[OPERATION] = BLT;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[IMMEDIATE] = 500;
+      cntrl_regs[OPERATION] = BLT;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[IMMEDIATE] = 500;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(reg_file[PC], 500u);
+      EXPECT_EQ(reg_file[PC], 500u);
+    }
 }
 
 // BRZ
 TEST(PeerTest, TestBrzInstruction) {
     init_mem(1024);
-    init_cache(0);
-    reg_file[R1] = 0;
+    for (auto cache_t = 0; cache_t < 4; cache_t++) {
+      init_cache(cache_t);
+      reg_file[R1] = 0;
 
-    cntrl_regs[OPERATION] = BRZ;
-    cntrl_regs[OPERAND_1] = R1;
-    cntrl_regs[IMMEDIATE] = 600;
+      cntrl_regs[OPERATION] = BRZ;
+      cntrl_regs[OPERAND_1] = R1;
+      cntrl_regs[IMMEDIATE] = 600;
 
-    EXPECT_TRUE(execute());
+      EXPECT_TRUE(execute());
 
-    EXPECT_EQ(reg_file[PC], 600u);
+      EXPECT_EQ(reg_file[PC], 600u);
+    }
 }
 
 // CMP
 TEST(PeerTest, TestCmpInstruction) {
-    init_mem(1024);
-    init_cache(0);
     reg_file[R1] = static_cast<unsigned int>(10);
     reg_file[R2] = static_cast<unsigned int>(5);
 
@@ -1257,8 +1345,6 @@ TEST(PeerTest, TestCmpInstruction) {
 
 // CMPI
 TEST(PeerTest, TestCmpiInstruction) {
-    init_mem(1024);
-    init_cache(0);
     reg_file[R1] = static_cast<unsigned int>(5);
 
     cntrl_regs[OPERATION] = CMPI;
@@ -1273,8 +1359,6 @@ TEST(PeerTest, TestCmpiInstruction) {
 
 //MOVI test
 TEST(PeerTest, MOVIInstruction) {
-    init_mem(1024);
-    init_cache(0);
     cntrl_regs[OPERATION]=MOVI;
     cntrl_regs[OPERAND_1]=R1;
     cntrl_regs[IMMEDIATE]=42;
@@ -1284,8 +1368,6 @@ TEST(PeerTest, MOVIInstruction) {
 
 //ADD test
 TEST(PeerTest, ADDInstruction) {
-    init_mem(1024);
-    init_cache(0);
     reg_file[R1]=10;
     reg_file[R2]=5;
     cntrl_regs[OPERATION]=ADD;
@@ -1298,8 +1380,6 @@ TEST(PeerTest, ADDInstruction) {
 
 //SUB instruction
 TEST(PeerTest, SUBInstruction) {
-    init_mem(1024);
-    init_cache(0);
     reg_file[R1]=10;
     reg_file[R2]=3;
     cntrl_regs[OPERATION]=SUB;
@@ -1311,8 +1391,6 @@ TEST(PeerTest, SUBInstruction) {
 }
 //TRP halt test
 TEST(PeerTest, TRP0Halts) {
-    init_mem(1024);
-    init_cache(0);
     cntrl_regs[OPERATION]=TRP;
     cntrl_regs[IMMEDIATE]=0;
     ASSERT_TRUE(execute());

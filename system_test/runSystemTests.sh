@@ -22,32 +22,33 @@ cd ..
 # Run tests
 
 # Test too large memory size
-program_output="$(../build/emu4380 ./binary/trp1_prints_R3 4294967296 )"
+program_output="$(../build/emu4380 ./binary/trp1_prints_R3 -m 4294967296 )"
 exit_code=$?
 echo -e "${GREEN}TEST: Memory argument too large"
-if [ $exit_code -eq 4 ] && [ "$program_output" = "Invalid memory size. Max memory size is 4294967295." ]; then 
+if [ $exit_code -eq 4 ] && [ "$program_output" = "Invalid arguments" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
 fi
 
 # Test memory negative
-program_output="$(../build/emu4380 ./binary/trp1_prints_R3 -1 )"
+program_output="$(../build/emu4380 ./binary/trp1_prints_R3 -m -1 )"
 exit_code=$?
 echo -e "${GREEN}TEST: Memory is negative"
-if [ $exit_code -eq 4 ] && [ "$program_output" = "Invalid memory size. Max memory size is 4294967295." ]; then 
+if [ $exit_code -eq 4 ] && [ "$program_output" = "Invalid arguments" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
 fi
 
 # Test memory too small for program
-program_output="$(../build/emu4380 ./binary/exit 8 )"
+program_output="$(../build/emu4380 ./binary/exit -m 8 )"
 exit_code=$?
 echo -e "${GREEN}TEST: Memory too small for program"
 if [ $exit_code -eq 2 ] && [ "$program_output" = "INSUFFICIENT MEMORY SPACE" ]; then 
   echo -e "RESULT: passed${NONE}"
-else 
+else
+  echo -e "$program_output"
   echo -e "${RED}RESULT: failed${NONE}"
 fi
 
@@ -161,9 +162,6 @@ else
   echo -e "${RED}RESULT: failed${NONE}"
 fi
 
-export output="$program_output"
-export expected="$expected_output"
-
 
 # Test invalid operation in binary 
 program_output="$(../build/emu4380 ./binary/invalid_operation)"
@@ -172,5 +170,50 @@ echo -e "${GREEN}TEST: invalid operation fails correctly"
 if [ $exit_code -eq 1 ] && [ "$program_output" = "INVALID INSTRUCTION AT: 8" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+
+# Test Simple No Cache Timing 
+program_output="$(../build/emu4380 ./timing/read_8_words.bin -m 1024, -c 0)"
+exit_code=$?
+echo -e "${GREEN}TEST: No Cache Simple Read Timing"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 208" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test Simple Direct Mapped Timing 
+program_output="$(../build/emu4380 ./timing/read_8_words.bin -m 1024, -c 1)"
+exit_code=$?
+echo -e "${GREEN}TEST: Direct Mapped Simple Read Timing"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 110" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test Simple Fully Assciative Timing 
+program_output="$(../build/emu4380 ./timing/read_8_words.bin -m 1024, -c 2)"
+exit_code=$?
+echo -e "${GREEN}TEST: Fully Associative Simple Read Timing"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 110" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
+  echo -e "${RED}RESULT: failed${NONE}"
+fi
+
+# Test Simple 2 Way Set Associative Timing 
+program_output="$(../build/emu4380 ./timing/read_8_words.bin -m 1024, -c 3)"
+exit_code=$?
+echo -e "${GREEN}TEST: Fully Associative Simple Read Timing"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 110" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
   echo -e "${RED}RESULT: failed${NONE}"
 fi

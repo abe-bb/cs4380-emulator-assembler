@@ -4,6 +4,7 @@
 class Cache {
   public:
     Cache(unsigned char* prog_mem);
+    virtual ~Cache();
 
     virtual unsigned int readByte(unsigned int address, unsigned char& outByte);
     virtual unsigned int writeByte(unsigned int address, unsigned char byte);
@@ -14,6 +15,18 @@ class Cache {
     unsigned char* prog_mem;
 };
 
+class CacheTime {
+  public:
+    unsigned int hits;
+    unsigned int words_stored;
+    unsigned int words_loaded;
+
+    CacheTime();
+
+    unsigned int calculate_timing(); 
+    void add(CacheTime other);
+};
+
 class CacheLine {
   public:
     CacheLine(unsigned int block_size, unsigned char tag_bits, unsigned char bo_bits);
@@ -22,8 +35,8 @@ class CacheLine {
     unsigned int get_used();
     bool isValid();
 
-    void write_block(unsigned char* prog_mem, unsigned int set);
-    void load_block(unsigned char* prog_mem, unsigned int tag, unsigned int set);
+    void write_block(unsigned char* prog_mem, unsigned int set, CacheTime& timing);
+    void load_block(unsigned char* prog_mem, unsigned int tag, unsigned int set, CacheTime& timing);
 
     // This function reads a word from the cache.
     // This function WILL NOT read beyond the end of the block
@@ -58,8 +71,8 @@ class CacheSet {
 
     unsigned int get_set();
 
-    unsigned int readWord(unsigned int tag, unsigned int bo, unsigned int& outWord);
-    unsigned int writeWord(unsigned int tag, unsigned int bo, unsigned int word, unsigned char num_bytes);
+    CacheTime readWord(unsigned int tag, unsigned int bo, unsigned int& outWord);
+    CacheTime writeWord(unsigned int tag, unsigned int bo, unsigned int word, unsigned char num_bytes);
 
   private:
     unsigned int set;
@@ -74,7 +87,7 @@ class CacheSet {
 };
 
 
-class NWayCache : Cache {
+class NWayCache : public Cache {
   public:
     // Constructor
     // cache size = block_size * cache_lines

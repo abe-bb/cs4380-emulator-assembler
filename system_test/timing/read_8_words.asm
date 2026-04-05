@@ -1,0 +1,12 @@
+DEADBEF   .INT #233495535
+BADCAFE   .INT #195939070
+        LDR R0, DEADBEF
+        LDR R0, BADCAFE 
+        LDR R0, DEADBEF
+        LDR R0, BADCAFE 
+        LDR R0, DEADBEF
+        LDR R0, BADCAFE 
+        LDR R0, DEADBEF
+        LDR R0, BADCAFE 
+        TRP #0
+        
