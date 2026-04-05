@@ -200,6 +200,11 @@ int main(int argc, char* argv[]) {
     // read file in as bytes
     std::ifstream in_file(args.bin_file, std::ios_base::binary);
 
+    if (!in_file.good()) {
+        std::cout << "Error with file: " << args.bin_file << "\n";
+        exit(3);
+    }
+
     auto begin = std::istreambuf_iterator<char>(in_file);
     auto end = std::istreambuf_iterator<char>();
     std::vector<unsigned char> program(begin, end);
