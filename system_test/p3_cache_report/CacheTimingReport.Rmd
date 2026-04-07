@@ -1,31 +1,44 @@
 ---
 title: "Cache Timing Report"
-output: html_document
+output: pdf_document
 author: Abe Clements
 date: April 3, 2026 
 ---
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(fig.width = 9, fig.height = 7)
+```
+
+[Github link](https://github.com/abe-bb/cs4380-emulator-assembler)
+
+(https://github.com/abe-bb/cs4380-emulator-assembler)
 
 # Test Programs
 
 #### Program A
+
 This program stores 10000 in R9 and 1 in R8, then subtracts R8 from R9, storing 
 the result in R9. Each of these subtractions is stored as an individual
 instruction.
 
 #### Program B
+
 This program performs the same functionality as program A, but does so using a
 loop instead of repeated instructions.
 
 #### Program C
+
 This program loads a pseudo-random byte from memory 10000 times in a loop.
 
 #### Program D
+
 This program loads a psuedo-random integer from memory 10000 times in a loop.
 
 #### Program E
+
 This program loads bytes 10000 to 1 sequentially in a loop.
 
 #### Program F
+
 This program performs 10000 jumps, jumping all over the stored program to
 psuedo-random locations.
 
@@ -90,7 +103,7 @@ program that simulates a random access pattern, so adding a cache simply adds
 overhead compared to No Cache. Program A only sees a moderate execution time
 improvement because the only thing being read from memory is a long sequence of 
 instructions, so sequential reads are being sped up due to data prefetching.
-Porgrams B-E all spend a large amount of their execution time in a loop, so they
+Programs B-E all spend a large amount of their execution time in a loop, so they
 benefit a lot more from repeated cache hits during execution.
 
 Now lets examine the difference between caches more closely by removing the 
@@ -173,4 +186,46 @@ p3_block32_lines32 %>%
   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust = 1)) +
   labs(title="Memory Time (minus \"No Cache\") - 32 byte blocks, 32 cache lines", x="Cache Type", 
        y="Time")
+```
+
+Here we can see that program A got an overall cache performance boost with larger
+block sizes. Program A's sequential memory access pattern means it could take 
+advantage of the performance gains of loading sequential words into the cache. 
+
+Program B remained unchanged, it's tiny program loop still fit within the cache
+without collisions. 
+
+Programs C and D all performed worse with larger cache block sizes. C and D 
+access random memory locations in a loop, so the larger miss penalty incurred
+by larger blocks leads to worse performance with larger block sizes.
+
+Program E had worse performance with direct mapped and better performance with
+fully associative and 2 sway set associative when the block size was larger.
+Program E sequentially reads memory in a loop. The direct mapped cache would thus
+occasionally evict the loop instructions during execution, decreasing performance
+as the instructions then have to be loaded into the cache again for the next 
+iteration. However, the 2 way set associative and the fully associative caches
+were both able to keep the instructions in memory during the sequential memory 
+reads, leading to improved performance with larger block sizes as the sequential
+memory accesses could take advantage of the improved performance of sequential 
+word loading into the cache, similar to program A. 
+
+And, of course, Program F had worse performance with larger block sizes. 
+It's random memory access pattern
+meaning that the hit penalty of larger block sizes is frequently paid. 
+
+# Data
+
+## Memory Timing (Block: 16 bytes, Lines: 64)
+```{R, echo=FALSE}
+p3_block16_lines64 %>% 
+  mutate(Cache.Type = as.factor(cache_name(Cache.Type))) %>% 
+  pivot_wider(names_from = "Cache.Type", values_from = "Timing")
+```
+
+## Memory Timing (Block: 32 bytes, Lines: 32)
+```{R, echo=FALSE}
+p3_block32_lines32 %>% 
+  mutate(Cache.Type = as.factor(cache_name(Cache.Type))) %>% 
+  pivot_wider(names_from = "Cache.Type", values_from = "Timing")
 ```
