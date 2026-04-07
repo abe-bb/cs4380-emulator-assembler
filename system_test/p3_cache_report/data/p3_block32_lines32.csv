@@ -1,0 +1,25 @@
+Program, Cache Type, Timing
+prog_a, 0, 160048
+prog_a, 1, 75028
+prog_a, 2, 75028
+prog_a, 3, 75028
+prog_b, 0, 320064
+prog_b, 1, 40052
+prog_b, 2, 40052
+prog_b, 3, 40052
+prog_c, 0, 2480184
+prog_c, 1, 560119
+prog_c, 2, 526965
+prog_c, 3, 526569
+prog_d, 0, 2480184
+prog_d, 1, 577853
+prog_d, 2, 541781
+prog_d, 3, 541467
+prog_e, 0, 560048
+prog_e, 1, 101840
+prog_e, 2, 76892
+prog_e, 3, 76892
+prog_f, 0, 160016
+prog_f, 1, 292032
+prog_f, 2, 292450
+prog_f, 3, 292252

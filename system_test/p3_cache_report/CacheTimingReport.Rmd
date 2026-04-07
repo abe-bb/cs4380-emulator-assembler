@@ -7,25 +7,170 @@ date: April 3, 2026
 
 # Test Programs
 
-##### Program A
+#### Program A
 This program stores 10000 in R9 and 1 in R8, then subtracts R8 from R9, storing 
 the result in R9. Each of these subtractions is stored as an individual
 instruction.
 
-##### Program B
+#### Program B
 This program performs the same functionality as program A, but does so using a
 loop instead of repeated instructions.
 
-##### Program C
+#### Program C
 This program loads a pseudo-random byte from memory 10000 times in a loop.
 
-##### Program D
+#### Program D
 This program loads a psuedo-random integer from memory 10000 times in a loop.
 
-##### Program E
+#### Program E
 This program loads bytes 10000 to 1 sequentially in a loop.
 
-##### Program F
+#### Program F
 This program performs 10000 jumps, jumping all over the stored program to
 psuedo-random locations.
 
+-----
+
+# Cache Configuration 1
+### 16 byte blocks, 64 cache lines
+
+<br />
+
+```{R, include=FALSE}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(scales)
+
+cache_name <- function(cache_type) {
+  result = c()
+  for (type in cache_type) {
+    if (type == 0) {
+      result = c(result, "No Cache")
+    }
+    else if (type == 1) {
+      result = c(result, "Direct Mapped")
+    }
+    else if (type == 2) {
+      result = c(result, "Fully Associative")
+    }
+    else if (type == 3) {
+      result = c(result, "2 Way Set Associative")
+    }
+    else if (type == 4) {
+      result = c(result, "Custom Cache")
+    }
+  }
+  return(result)
+}
+```
+
+```{R p4_cache, echo=FALSE} 
+# read in data
+p3_block16_lines64 <- read.csv("data/p3_block16_lines64.csv")
+
+pal <- hue_pal()(4)
+
+# group data and plot in an aligned grid
+p3_block16_lines64 %>%
+  mutate(Cache.Type = cache_name(Cache.Type)) %>% 
+  ggplot(aes(x=Cache.Type, y=Timing, fill=Cache.Type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=pal) +
+  facet_wrap(vars(Program)) +
+  labs(title="Memory Time - 16 byte blocks, 64 cache lines", x="Cache Type", 
+       y="Time") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust = 1))
+```
+
+From this data it is clear that adding a cache improved execution time for most
+of the programs, with the only exception being the program F. Program F is the
+program that simulates a random access pattern, so adding a cache simply adds
+overhead compared to No Cache. Program A only sees a moderate execution time
+improvement because the only thing being read from memory is a long sequence of 
+instructions, so sequential reads are being sped up due to data prefetching.
+Porgrams B-E all spend a large amount of their execution time in a loop, so they
+benefit a lot more from repeated cache hits during execution.
+
+Now lets examine the difference between caches more closely by removing the 
+"No Cache" bars.
+
+<br />
+
+```{R echo=FALSE}
+# group data and plot in an aligned grid
+p3_block16_lines64 %>%
+  mutate(Cache.Type = cache_name(Cache.Type)) %>%
+  filter(Cache.Type != "No Cache") %>% 
+  ggplot(aes(x=Cache.Type, y=Timing, fill=Cache.Type)) +
+  scale_fill_manual(values=pal[1:3]) +
+  ylim(0, 600000) +
+  geom_bar(stat="identity", position="dodge") +
+  facet_wrap(vars(Program)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust = 1)) +
+  labs(title="Memory Time (minus \"No Cache\") - 16 byte blocks, 64 cache lines", x="Cache Type", 
+       y="Time")
+```
+
+Programs A, B, and F show no performance difference between cache types. Program 
+A accesses memory completely sequentially, so all cache types performed the same. 
+Program B is a tiny instruction loop without memory accesses during the loop, so 
+the main program loop fit into all of the caches without collisions. Program F
+accesses memory in a completely random way, so the cache configurations are all
+equally unhelpful. 
+
+Programs C, D, and E all show the same pattern. 2 way set associative and fully
+fully associative caches show comparable performance and both show improved
+performance compared to direct mapped. All three of these programs execute
+a main loop that accesses memory. This explains the increased performance of the
+fully associative and 2 way set associative caches, which are both able to keep
+the instructions in cache during the memory accesses, while the direct mapped
+cache would occasionally have to evict the loop instructions. 
+
+<br />
+
+# Cache Configuration 2
+### 32 byte blocks
+
+```{R echo=FALSE}
+p3_block32_lines32 <- read.csv("data/p3_block32_lines32.csv")
+
+# group data and plot in an aligned grid
+p3_block32_lines32 %>%
+  mutate(Cache.Type = cache_name(Cache.Type)) %>% 
+  ggplot(aes(x=Cache.Type, y=Timing, fill=Cache.Type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=pal) +
+  facet_wrap(vars(Program)) +
+  labs(title="Memory Time - 32 byte blocks, 32 cache lines", x="Cache Type", 
+       y="Time") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust = 1))
+```
+
+These results look quite similar to the 16 byte 64 line cache configuration, the
+only clear difference is the increased penalty paid by adding caches in Program 
+F, which makes sense, given the random access patterns and increased miss 
+penalty paid with larger block sizes. 
+
+Lets remove the "No Cache" option again
+to see the differences between caches  more clearly.
+
+<br />
+
+```{R echo=FALSE}
+# group data and plot in an aligned grid
+p3_block32_lines32 %>%
+  mutate(Cache.Type = cache_name(Cache.Type)) %>%
+  filter(Cache.Type != "No Cache") %>% 
+  ggplot(aes(x=Cache.Type, y=Timing, fill=Cache.Type)) +
+  scale_fill_manual(values=pal[1:3]) +
+  geom_bar(stat="identity", position="dodge") +
+  facet_wrap(vars(Program)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust = 1)) +
+  labs(title="Memory Time (minus \"No Cache\") - 32 byte blocks, 32 cache lines", x="Cache Type", 
+       y="Time")
+```
