@@ -16,6 +16,9 @@ unsigned int mem_cycle_cntr = 0;
 
 Cache* cache = new Cache(nullptr);
 
+unsigned int cache_type = 0;
+
+
 PostOpFlag flag = NOTHING;
 
 const unsigned int BLOCK_SIZE = 16;
@@ -473,6 +476,9 @@ bool init_mem(unsigned int size) {
 // are called
 void init_cache(unsigned int cacheType) {
   delete cache;
+
+  cache_type = cacheType;
+
   switch (cacheType) {
     case 0:
         cache = new Cache(prog_mem);
@@ -512,7 +518,11 @@ bool fetch() {
   cntrl_regs[OPERAND_3] = (ops & 0xFF000000) >> 24;
   // cast to unsigned int pointer and dereference (assumes little endian environment)
   cntrl_regs[IMMEDIATE] = readWord(load_addr + 4);
-                          
+
+  if (cache_type == 0) {
+    mem_cycle_cntr -= 6;
+  }
+               
   // increment PC and return true
   reg_file[PC] += 8;
     return true;

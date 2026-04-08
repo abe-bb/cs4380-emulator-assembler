@@ -13,6 +13,8 @@ extern unsigned int cntrl_regs[5];
 
 extern unsigned int mem_cycle_cntr;
 
+extern unsigned int cache_type;
+
 extern Cache* cache;
 
 enum RegNames { R0=0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10,
