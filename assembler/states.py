@@ -93,7 +93,7 @@ def parse_char(line: AsmLine) -> int:
 
     return char_byte
 
-def handle_immediate(asm_state: AsmState, line: AsmLine):
+def handle_immediate_numeric(asm_state: AsmState, line: AsmLine):
     if line.line[line.index] == "#":
         numeric = parse_numeric(line)
         num_bytes = numeric.to_bytes(4, byteorder="little", signed=True)
@@ -105,13 +105,17 @@ def handle_immediate(asm_state: AsmState, line: AsmLine):
         for i in range(3):
             asm_state.bytecode.append(0)
     else:
-        label = parse_label_name(line)
-        label_marker = LabelMarker(label, len(asm_state.bytecode))
-        asm_state.label_list.append(label_marker)
+        raise AssemblerError(line.line_num)
 
-        # add placeholder bytes
-        for i in range(4):
-            asm_state.bytecode.append(0)
+
+def handle_immediate_addr(asm_state: AsmState, line: AsmLine):
+    label = parse_label_name(line)
+    label_marker = LabelMarker(label, len(asm_state.bytecode))
+    asm_state.label_list.append(label_marker)
+
+    # add placeholder bytes
+    for i in range(4):
+        asm_state.bytecode.append(0)
 
 def switch_to_code_stage(asm_state: AsmState):
     asm_state.stage = Stage.Code
@@ -132,39 +136,41 @@ def increment_index(line: AsmLine, allow_eol=False):
 reg1 = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.DC_I, 0]
 reg2 = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.DC_I, 1]
 reg3 = [OperandType.Register, OperandType.Register, OperandType.Register, OperandType.DC_I, 2]
-reg1_immed = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.Immediate, 1]
-reg2_immed = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.Immediate, 2]
-immed = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.Immediate, 0]
+reg1_numeric = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.Numeric, 1]
+reg1_addr = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.Address, 1]
+reg2_numeric = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.Numeric, 2]
+addr = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.Address, 0]
+numeric = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.Numeric, 0]
 inst_operands = {
-    "JMP": immed,
+    "JMP": addr,
     "JMR": reg1,
-    "BNZ": reg1_immed,
-    "BGT": reg1_immed,
-    "BLT": reg1_immed,
-    "BRZ": reg1_immed,
+    "BNZ": reg1_addr,
+    "BGT": reg1_addr,
+    "BLT": reg1_addr,
+    "BRZ": reg1_addr,
     "MOV": reg2,
-    "MOVI": reg1_immed,
-    "LDA": reg1_immed,
-    "STR": reg1_immed,
-    "LDR": reg1_immed,
-    "STB": reg1_immed,
-    "LDB": reg1_immed,
+    "MOVI": reg1_numeric,
+    "LDA": reg1_addr,
+    "STR": reg1_addr,
+    "LDR": reg1_addr,
+    "STB": reg1_addr,
+    "LDB": reg1_addr,
     "ISTR": reg2,
     "ILDR": reg2,
     "ISTB": reg2,
     "ILDB": reg2,
     "ADD": reg3,
-    "ADDI": reg2_immed,
+    "ADDI": reg2_numeric,
     "SUB": reg3,
-    "SUBI": reg2_immed,
+    "SUBI": reg2_numeric,
     "MUL": reg3,
-    "MULI": reg2_immed,
+    "MULI": reg2_numeric,
     "DIV": reg3,
     "SDIV": reg3,
-    "DIVI": reg2_immed,
+    "DIVI": reg2_numeric,
     "CMP": reg3,
-    "CMPI": reg2_immed,
-    "TRP": immed
+    "CMPI": reg2_numeric,
+    "TRP": numeric
 }
 
 valid_registers = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15",
@@ -263,9 +269,12 @@ class Instruction(State):
                         return Error()
                     increment_index(line)
 
-            elif operand == OperandType.Immediate:
+            elif operand == OperandType.Numeric:
                 skip_space_tab(line)
-                handle_immediate(asm_state, line)
+                handle_immediate_numeric(asm_state, line)
+            elif operand == OperandType.Address:
+                skip_space_tab(line)
+                handle_immediate_addr(asm_state, line)
 
         # make sure there's nothing but whitespace and comments at the end of the line
         skip_space_tab(line, allow_line_end=True)

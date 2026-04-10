@@ -1,4 +1,4 @@
-    MOVI R3, SUCCESS
+    LDA R3, SUCCESS
     JMR R3
     MOVI R3, 'f'
     TRP #3

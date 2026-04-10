@@ -17,5 +17,5 @@ BYT    .BYT              ; unspecificed BYT
        .bYt #0
   LdR SL, F1r$T
   LDr SB, 1FIRST
-  lDR SP, '\b'
-  LDR FP, #16
+  lDR SP, 1FIRST
+  LDR FP, 0ZERO

@@ -20,7 +20,8 @@ class OperandType(Enum):
     DC = 0
     DC_I = 1
     Register = 2
-    Immediate = 3
+    Numeric = 3
+    Address = 4
 
 class AsmLine:
     def __init__(self, line: str, line_num: int):
