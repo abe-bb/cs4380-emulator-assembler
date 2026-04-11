@@ -1393,3 +1393,69 @@ TEST(PeerTest, TRP0Halts) {
     cntrl_regs[IMMEDIATE]=0;
     ASSERT_TRUE(execute());
 }
+
+TEST(LogicalTest, AND) {
+  set_operands(R0, R1, R2);
+  set_operation(AND);
+
+  // TRUE && TRUE
+  reg_file[R0] = 100;
+  reg_file[R1] = 1;
+  reg_file[R2] = 1;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(1, prog_mem[R0]);
+
+  // TRUE && TRUE
+  reg_file[R0] = 100;
+  reg_file[R1] = 5234234;
+  reg_file[R2] = 2083423;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(1, prog_mem[R0]);
+
+  // FALSE && TRUE
+  reg_file[R0] = 100;
+  reg_file[R1] = 0;
+  reg_file[R2] = 2083423;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(0, prog_mem[R0]);
+
+  // FALSE && FALSE
+  reg_file[R0] = 100;
+  reg_file[R1] = 0;
+  reg_file[R2] = 0;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(0, prog_mem[R0]);
+}
+
+TEST(LogicalTest, OR) {
+  set_operands(R0, R1, R2);
+  set_operation(AND);
+
+  // TRUE && TRUE
+  reg_file[R0] = 100;
+  reg_file[R1] = 1;
+  reg_file[R2] = 1;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(1, prog_mem[R0]);
+
+  // TRUE && TRUE
+  reg_file[R0] = 100;
+  reg_file[R1] = 5234234;
+  reg_file[R2] = 2083423;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(1, prog_mem[R0]);
+
+  // FALSE && TRUE
+  reg_file[R0] = 100;
+  reg_file[R1] = 0;
+  reg_file[R2] = 2083423;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(1, prog_mem[R0]);
+
+  // FALSE && FALSE
+  reg_file[R0] = 100;
+  reg_file[R1] = 0;
+  reg_file[R2] = 0;
+  ASSERT_TRUE(execute());
+  ASSERT_EQ(0, prog_mem[R0]);
+}
