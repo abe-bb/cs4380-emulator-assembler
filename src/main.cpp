@@ -31,7 +31,7 @@ class Args {
              cache_lines(cache_lines), associativity(associativity) {}
 };
 
-void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
+void setup_mem_n_regs(unsigned int mem_size, std::vector<unsigned char> program) {
     if (program.size() > mem_size) {
         std::cout << "INSUFFICIENT MEMORY SPACE\n";
         std::cout << std::flush;
@@ -47,6 +47,13 @@ void setup_memory(unsigned int mem_size, std::vector<unsigned char> program) {
 
     // load first 4 bytes into PC register
     reg_file[PC] = *(unsigned int*)prog_mem;
+
+    // initialize registers to their proper values
+    reg_file[SL] = program.size();
+    reg_file[SB] = MEM_SIZE;
+    reg_file[SP] = MEM_SIZE;
+    reg_file[FP] = 0;
+    reg_file[HP] = program.size();
 }
 
 void setup_cache(Args& args) {
@@ -209,7 +216,7 @@ int main(int argc, char* argv[]) {
     auto end = std::istreambuf_iterator<char>();
     std::vector<unsigned char> program(begin, end);
 
-    setup_memory(args.mem_size, program);
+    setup_mem_n_regs(args.mem_size, program);
     setup_cache(args);
 
     return emulator_loop();

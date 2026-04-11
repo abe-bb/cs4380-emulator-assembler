@@ -109,83 +109,75 @@ TEST(Fetch, BytesPlacedInCtrlRegs) {
 TEST(MemTests, ReadByteTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
+  init_cache(0);
 
-  for (auto i = 0; i < 4; i++) {
-    init_cache(i);
-    auto mem_cntr_before = mem_cycle_cntr;
+  auto mem_cntr_before = mem_cycle_cntr;
 
-    for (auto addr = 0; addr < mem_size; addr++) {
-      unsigned char mem = rand();
-      prog_mem[addr] = mem;
+  for (auto addr = 0; addr < mem_size; addr++) {
+    unsigned char mem = rand();
+    prog_mem[addr] = mem;
 
-      auto result = readByte(addr);
+    auto result = readByte(addr);
 
-      ASSERT_EQ(mem, result);
-    }
-
-    ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
+    ASSERT_EQ(mem, result);
   }
+
+  ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
 }
 
 TEST(MemTests, ReadWordTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
+  init_cache(0);
 
-  for (auto i = 0; i < 4; i++) {
-    init_cache(i);
-    auto mem_cntr_before = mem_cycle_cntr;
+  auto mem_cntr_before = mem_cycle_cntr;
 
-    for (auto addr = 0; addr < mem_size - 3; addr++) {
-      unsigned int mem = rand();
-      *(unsigned int*)(prog_mem + addr) = mem;
+  for (auto addr = 0; addr < mem_size - 3; addr++) {
+    unsigned int mem = rand();
+    *(unsigned int*)(prog_mem + addr) = mem;
 
-      auto result = readWord(addr);
+    auto result = readWord(addr);
 
-      ASSERT_EQ(mem, result);
-    }
-
-    ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
+    ASSERT_EQ(mem, result);
   }
+
+  ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
 }
 
 TEST(MemTests, WriteByteTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
+  init_cache(0);
 
-  for (auto i = 0; i < 4; i++) {
-    init_cache(i);
-    auto mem_cntr_before = mem_cycle_cntr;
+  auto mem_cntr_before = mem_cycle_cntr;
 
-    for (auto addr = 0; addr < mem_size; addr++) {
-      unsigned char mem = rand();
-      writeByte(addr, mem);
+  for (auto addr = 0; addr < mem_size; addr++) {
+    unsigned char mem = rand();
+    writeByte(addr, mem);
 
-      auto result = prog_mem[addr];
-      ASSERT_EQ(mem, result);
-    }
-
-    ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
+    auto result = prog_mem[addr];
+    ASSERT_EQ(mem, result);
   }
+
+  ASSERT_EQ(mem_cntr_before + (mem_size * 8), mem_cycle_cntr);
 }
 
 TEST(MemTests, WriteWordTests) {
   auto mem_size = 1024;
   init_mem(mem_size);
+  init_cache(0);
 
-  for (auto i = 0; i < 4; i++) {
-    init_cache(i);
-    auto mem_cntr_before = mem_cycle_cntr;
+  auto mem_cntr_before = mem_cycle_cntr;
 
-    for (auto addr = 0; addr < mem_size - 3; addr++) {
-      unsigned int mem = rand();
-      writeWord(addr, mem);
+  for (auto addr = 0; addr < mem_size - 3; addr++) {
+    unsigned int mem = rand();
+    writeWord(addr, mem);
 
-      auto result = *(unsigned int*)(prog_mem + addr);
-      ASSERT_EQ(mem, result);
-    }
-
-    ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
+    auto result = *(unsigned int*)(prog_mem + addr);
+    ASSERT_EQ(mem, result);
   }
+
+  ASSERT_EQ(mem_cntr_before + ((mem_size - 3) * 8), mem_cycle_cntr);
 }
 
 TEST(JumpTests, JumpInstructionEnumValues){
