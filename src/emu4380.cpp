@@ -652,10 +652,10 @@ bool execute() {
 }
 
 // convenience categorization of operations
-std::vector<unsigned int> operations_0operand_3dc = {1, 31};
-std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13, JMR, BNZ, BGT, BLT, BRZ};
-std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26, ISTR, ILDR, ISTB, ILDB, CMPI};
-std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25, CMP};
+std::vector<unsigned int> operations_0operand_3dc = {1, 31, 39, 40};
+std::vector<unsigned int> operations_1operand_2dc = {8, 9, 10, 11, 12, 13, JMR, BNZ, BGT, BLT, BRZ, 35, 36, 37, 38, 32, 33};
+std::vector<unsigned int> operations_2operand_1dc = {7, 19, 21, 23, 26, ISTR, ILDR, ISTB, ILDB, CMPI, 34};
+std::vector<unsigned int> operations_3operand_0dc = {18, 20, 22, 24, 25, CMP, 27, 28};
 
 bool parse_unsigned_int(std::string input, unsigned int &output) {
   try {

@@ -862,24 +862,30 @@ TEST(ExecuteMove, TestStb) {
 
 TEST(ExecuteMove, TestStbStores1Byte) {
   init_mem(1024);
-  for (auto cache_t = 0; cache_t < 4; cache_t++) {
-    init_cache(cache_t);
+  // write through to memory
+  init_cache(0);
 
-    reg_file[R0] = 0x87654321;
+  reg_file[R0] = 0x87654321;
 
-    set_operation(STB);
-    set_operands(R0);
-    set_immediate(60);
+  set_operation(STB);
+  set_operands(R0);
+  set_immediate(60);
 
-    ASSERT_TRUE(execute());
-    EXPECT_EQ(0x21, prog_mem[60]);
-    EXPECT_EQ(0, prog_mem[61]);
-    EXPECT_EQ(0, prog_mem[62]);
-    EXPECT_EQ(0, prog_mem[63]);
-    EXPECT_EQ(0, prog_mem[57]);
-    EXPECT_EQ(0, prog_mem[58]);
-    EXPECT_EQ(0, prog_mem[59]);
-  }
+  prog_mem[61] = 0;
+  prog_mem[62] = 0;
+  prog_mem[63] = 0;
+  prog_mem[57] = 0;
+  prog_mem[58] = 0;
+  prog_mem[59] = 0;
+
+  ASSERT_TRUE(execute());
+  EXPECT_EQ(0x21, prog_mem[60]);
+  EXPECT_EQ(0, prog_mem[61]);
+  EXPECT_EQ(0, prog_mem[62]);
+  EXPECT_EQ(0, prog_mem[63]);
+  EXPECT_EQ(0, prog_mem[57]);
+  EXPECT_EQ(0, prog_mem[58]);
+  EXPECT_EQ(0, prog_mem[59]);
 }
 
 TEST(ExecuteMove, StbFailsBeyondMemory) {
