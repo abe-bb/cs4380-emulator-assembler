@@ -37,6 +37,15 @@ def run_and_cmp(file_pair_prefix: str, input_directory: str = input_dir, expecte
     assert result.returncode == 0
     assert cmp_output_expected(file_pair_prefix, input_directory, expected_directory)
 
+@pytest.mark.parametrize("file_prefix",
+                         ["p4_logical",
+                          "p4_heap",
+                          "p4_BTS",
+                          "p4_STR_numeric",
+                          "p4_STR_chars"])
+def test_part4(file_prefix):
+    run_and_cmp(file_prefix, "input/", "expected/")
+
 @pytest.mark.parametrize("filename", [
     "cmp",
     "cmpi",

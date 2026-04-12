@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 
 unsigned int MEM_SIZE = 0b1 << 17;
@@ -645,7 +646,7 @@ bool execute() {
       return trp();
     default:
       std::cout << "execute() called with invalid operation!";
-      throw "Can't handle invalid operation!";
+      throw std::runtime_error("Can't handle invalid operation!");
       
   }
   return false;

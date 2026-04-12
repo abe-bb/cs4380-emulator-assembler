@@ -1395,8 +1395,8 @@ TEST(PeerTest, TRP0Halts) {
 }
 
 TEST(LogicalTest, AND) {
-  set_operands(R0, R1, R2);
   set_operation(AND);
+  set_operands(R0, R1, R2);
 
   // TRUE && TRUE
   reg_file[R0] = 100;
@@ -1428,8 +1428,8 @@ TEST(LogicalTest, AND) {
 }
 
 TEST(LogicalTest, OR) {
+  set_operation(OR);
   set_operands(R0, R1, R2);
-  set_operation(AND);
 
   // TRUE && TRUE
   reg_file[R0] = 100;
@@ -1458,4 +1458,137 @@ TEST(LogicalTest, OR) {
   reg_file[R2] = 0;
   ASSERT_TRUE(execute());
   ASSERT_EQ(0, prog_mem[R0]);
+}
+
+TEST(HeapTest, ALCI) {
+  init_mem(1024);
+  init_cache(0);
+
+  set_operation(ALCI);
+  set_operands(R8);
+  set_immediate(128);
+
+  reg_file[HP] = 128;
+
+  ASSERT_TRUE(execute());
+
+  // initial heap address stored
+  ASSERT_EQ(128, reg_file[R8]);
+
+  // HP incremented appropriately
+  ASSERT_EQ(256, reg_file[HP]);
+}
+
+TEST(HeapTest, ALLC) {
+  init_mem(1024);
+  init_cache(0);
+
+  set_operation(ALLC);
+  set_operands(R8);
+  set_immediate(56);
+
+  // store 64 at address 56
+  prog_mem[56] = 64;
+
+  reg_file[HP] = 128;
+
+  ASSERT_TRUE(execute());
+
+  // initial heap address stored
+  ASSERT_EQ(128, reg_file[R8]);
+
+  // HP incremented appropriately
+  ASSERT_EQ(192, reg_file[HP]);
+}
+
+TEST(HeapTest, IALLC) {
+  init_mem(1024);
+  init_cache(0);
+
+  set_operation(IALLC);
+  set_operands(R8, R9);
+
+  reg_file[R9] = 24;
+
+  // store 64 at address 56
+  prog_mem[24] = 64;
+
+  reg_file[HP] = 64;
+
+  ASSERT_TRUE(execute());
+
+  // initial heap address stored
+  ASSERT_EQ(64, reg_file[R8]);
+
+  // HP incremented appropriately
+  ASSERT_EQ(128, reg_file[HP]);
+}
+
+TEST(HeapTest, ALCI_ExceedMemFails) {
+  init_mem(1024);
+  init_cache(0);
+
+  set_operation(ALCI);
+  set_operands(R8);
+  set_immediate(897);
+
+  reg_file[HP] = 128;
+
+  reg_file[R8] = 0;
+
+  ASSERT_FALSE(execute());
+
+  // R8 should not be changed stored
+  ASSERT_EQ(0, reg_file[R8]);
+
+  // HP should not be changed
+  ASSERT_EQ(128, reg_file[HP]);
+}
+
+TEST(HeapTest, ALLC_ExceedMemFails) {
+  init_mem(1024);
+  init_cache(0);
+
+  set_operation(ALLC);
+  set_operands(R8);
+  set_immediate(56);
+
+  reg_file[R8] = 0;
+
+  // store 897 at address 56
+  *(unsigned int*)(prog_mem + 56) = 897;
+
+  reg_file[HP] = 128;
+
+  ASSERT_FALSE(execute());
+
+  // R8 should not be changed stored
+  ASSERT_EQ(0, reg_file[R8]);
+
+  // HP should not be changed
+  ASSERT_EQ(128, reg_file[HP]);
+}
+
+TEST(HeapTest, IALLC_ExceedMemFails) {
+  init_mem(1024);
+  init_cache(0);
+
+  set_operation(IALLC);
+  set_operands(R8, R9);
+
+  reg_file[R8] = 0;
+  reg_file[R9] = 24;
+
+  // store 64 at address 56
+  *(unsigned int*)(prog_mem+24) = 897;
+
+  reg_file[HP] = 128;
+
+  ASSERT_FALSE(execute());
+
+  // R8 should not be changed stored
+  ASSERT_EQ(0, reg_file[R8]);
+
+  // HP should not be changed
+  ASSERT_EQ(128, reg_file[HP]);
 }
