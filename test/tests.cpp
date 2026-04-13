@@ -475,7 +475,7 @@ TEST(Decode, InvalidOperationsFail) {
   set_immediate(4);
 
   // list invalid operator values to be tested
-  std::vector<unsigned int> invalid_operations = {0, 27, 28, 32, 33, 55, 100, 200, 255};
+  std::vector<unsigned int> invalid_operations = {0, 41, 42, 43, 44, 55, 100, 200, 255};
 
   // loop over all valid operators and decode them
   for (unsigned int i : invalid_operations) {
@@ -499,7 +499,7 @@ TEST(Decode, ValidTRPSucceeds) {
 
 TEST(Decode, InvalidTRPFails) {
 
-  for (unsigned int i = 5; i < 98; i++) {
+  for (unsigned int i = 7; i < 98; i++) {
     set_operation(TRP);
     set_immediate(i);
 

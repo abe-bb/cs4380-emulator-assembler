@@ -487,6 +487,65 @@ bool trp() {
   }
 }
 
+bool alci() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto bytes = cntrl_regs[IMMEDIATE];
+
+  // check that the heap would still fit in memory
+  if (reg_file[HP] + bytes > MEM_SIZE) {
+    return false;
+  }
+
+  reg_file[r_dest] = reg_file[HP];
+  reg_file[HP] += bytes;
+  return true;
+}
+
+bool allc() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto address = cntrl_regs[IMMEDIATE];
+
+  // check that the address is in range
+  if (!validate_address(address)) {
+    return false;
+  }
+
+  unsigned int bytes = *(unsigned int*)(prog_mem + address);
+
+  // check that the heap would still fit in memory
+  if (reg_file[HP] + bytes > MEM_SIZE) {
+    return false;
+  }
+  
+  reg_file[r_dest] = reg_file[HP];
+  reg_file[HP] += bytes;
+
+  return true;
+}
+
+bool iallc() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_addr = cntrl_regs[OPERAND_2];
+
+  unsigned int address = reg_file[r_addr];
+
+  // check that the address is in range
+  if (!validate_address(address)) {
+    return false;
+  }
+
+  unsigned int bytes = *(unsigned int*)(prog_mem + address);
+  // check that the heap would still fit in memory
+  if (reg_file[HP] + bytes > MEM_SIZE) {
+    return false;
+  }
+  
+  reg_file[r_dest] = reg_file[HP];
+  reg_file[HP] += bytes;
+
+  return true;
+}
+
 bool init_mem(unsigned int size) {
   prog_mem = new unsigned char[size];
   MEM_SIZE = size;
@@ -556,11 +615,9 @@ bool fetch() {
 // instruction with an RD value of 55 would clearly be a malformed
 // instruction.
 bool decode() {
-  // validate operation (1-26, 29-31)
+  // validate operation (1-40)
   auto op = cntrl_regs[OPERATION];
-  if (!((op >= 1 && op <= 13) ||
-     (op >= 14 && op <= 26) ||
-     (op >= 29 && op <= 31))) {
+  if ((op < 1 || op > 40)) {
     return false;
   }
 
@@ -573,7 +630,7 @@ bool decode() {
   if (op == 31) {
     unsigned int imm = cntrl_regs[IMMEDIATE];
 
-    if (!(imm <= 4 || imm == 98)) {
+    if (!(imm <= 6 || imm == 98)) {
       return false;
     }
   }
@@ -668,6 +725,12 @@ bool execute() {
       return cmpi();
     case TRP:
       return trp();
+    case ALCI:
+      return alci();
+    case ALLC:
+      return allc();
+    case IALLC:
+      return iallc();
     default:
       std::cout << "execute() called with invalid operation!";
       throw std::runtime_error("Can't handle invalid operation!");
