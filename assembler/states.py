@@ -6,7 +6,6 @@
 #
 # All of them can transition to Error
 
-# TODO:
 
 from asm_types import AsmState, AsmLine, AssemblerError, Stage, OperandType, LabelMarker
 
@@ -92,6 +91,20 @@ def parse_char(line: AsmLine) -> int:
     increment_index(line, allow_eol=True)
 
     return char_byte
+
+def parse_string(line: AsmLine) -> str:
+    if line.line[line.index] != "\"":
+        raise AssemblerError(line.line_num)
+    increment_index(line)
+
+    start_index = line.index
+    while line.line[line.index] != "\"":
+        increment_index(line)
+    end_index = line.index
+
+    # increment index beyond closing double quotes
+    increment_index(line, allow_eol=True)
+    return line.line[start_index:end_index]
 
 def handle_immediate_numeric(asm_state: AsmState, line: AsmLine):
     if line.line[line.index] == "#":
@@ -333,6 +346,35 @@ class Directive(State):
             elif line.line[line.index] == "'":
                 char_byte = parse_char(line)
                 asm_state.bytecode.append(char_byte)
+        elif dir_type == "BTS":
+            num = parse_numeric(line)
+
+            # can't allocate negative bytes
+            if num < 0:
+                return Error()
+
+            for i in range(num):
+                asm_state.bytecode.append(0)
+        elif dir_type == "STR":
+            if line.line[line.index] == "\"":
+                string = parse_string(line)
+
+                str_len = len(string)
+                str_bytes = string.encode(encoding="ascii")
+            else:
+                str_len = parse_numeric(line)
+
+                str_bytes = bytearray([0] * str_len)
+
+            if str_len > 255:
+                return Error()
+
+            # write string length
+            asm_state.bytecode.append(str_len)
+            # write string bytes
+            asm_state.bytecode.extend(str_bytes)
+            # null terminate
+            asm_state.bytecode.append(0)
 
 
         # make sure there's nothing but whitespace and comments at the end of the line
