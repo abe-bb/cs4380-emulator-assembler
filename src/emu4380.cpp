@@ -352,6 +352,26 @@ bool divi() {
   return true;
 }
 
+bool and_inst() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto r_src2 = cntrl_regs[OPERAND_3];
+
+  reg_file[r_dest] = ((bool)reg_file[r_src1]) && ((bool)reg_file[r_src2]);
+  
+  return true;
+}
+
+bool or_inst() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+  auto r_src1 = cntrl_regs[OPERAND_2];
+  auto r_src2 = cntrl_regs[OPERAND_3];
+
+  reg_file[r_dest] = reg_file[r_src1] || reg_file[r_src2];
+
+  return true;
+}
+
 bool cmp() {
   auto r_dest = cntrl_regs[OPERAND_1];
   signed int s1 = reg_file[cntrl_regs[OPERAND_2]];
@@ -638,6 +658,10 @@ bool execute() {
       return sdiv();
     case DIVI:
       return divi();        
+    case AND:
+      return and_inst();
+    case OR:
+      return or_inst();
     case CMP:
       return cmp();
     case CMPI:

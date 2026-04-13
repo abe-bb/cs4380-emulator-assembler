@@ -1403,28 +1403,28 @@ TEST(LogicalTest, AND) {
   reg_file[R1] = 1;
   reg_file[R2] = 1;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(1, prog_mem[R0]);
+  ASSERT_EQ(1, reg_file[R0]);
 
   // TRUE && TRUE
   reg_file[R0] = 100;
   reg_file[R1] = 5234234;
   reg_file[R2] = 2083423;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(1, prog_mem[R0]);
+  ASSERT_EQ(1, reg_file[R0]);
 
   // FALSE && TRUE
   reg_file[R0] = 100;
   reg_file[R1] = 0;
   reg_file[R2] = 2083423;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(0, prog_mem[R0]);
+  ASSERT_EQ(0, reg_file[R0]);
 
   // FALSE && FALSE
   reg_file[R0] = 100;
   reg_file[R1] = 0;
   reg_file[R2] = 0;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(0, prog_mem[R0]);
+  ASSERT_EQ(0, reg_file[R0]);
 }
 
 TEST(LogicalTest, OR) {
@@ -1436,28 +1436,28 @@ TEST(LogicalTest, OR) {
   reg_file[R1] = 1;
   reg_file[R2] = 1;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(1, prog_mem[R0]);
+  ASSERT_EQ(1, reg_file[R0]);
 
   // TRUE && TRUE
   reg_file[R0] = 100;
   reg_file[R1] = 5234234;
   reg_file[R2] = 2083423;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(1, prog_mem[R0]);
+  ASSERT_EQ(1, reg_file[R0]);
 
   // FALSE && TRUE
   reg_file[R0] = 100;
   reg_file[R1] = 0;
   reg_file[R2] = 2083423;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(1, prog_mem[R0]);
+  ASSERT_EQ(1, reg_file[R0]);
 
   // FALSE && FALSE
   reg_file[R0] = 100;
   reg_file[R1] = 0;
   reg_file[R2] = 0;
   ASSERT_TRUE(execute());
-  ASSERT_EQ(0, prog_mem[R0]);
+  ASSERT_EQ(0, reg_file[R0]);
 }
 
 TEST(HeapTest, ALCI) {
