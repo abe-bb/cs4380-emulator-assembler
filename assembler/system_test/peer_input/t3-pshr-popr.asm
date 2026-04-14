@@ -1,0 +1,6 @@
+  MOVI R3, #42
+  PSHR R3
+  MOVI R3, #0
+  POPR R3
+  TRP #1
+  TRP #0

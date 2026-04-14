@@ -1592,3 +1592,204 @@ TEST(HeapTest, IALLC_ExceedMemFails) {
   // HP should not be changed
   ASSERT_EQ(128, reg_file[HP]);
 }
+
+TEST(PeerLogical, And_False1){
+    reg_file[R1] = 1;
+    reg_file[R2] = 0;
+    reg_file[R3] = 0;
+
+    cntrl_regs[OPERATION] = 27;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 0);
+
+}
+TEST(PeerLogical, And_False2){
+    reg_file[R1] = 1;
+    reg_file[R2] = 1;
+    reg_file[R3] = 0;
+
+    cntrl_regs[OPERATION] = 27;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 0);
+
+}
+TEST(PeerLogical, And_False3){
+    reg_file[R1] = 1;
+    reg_file[R2] = 0;
+    reg_file[R3] = 1;
+
+    cntrl_regs[OPERATION] = 27;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 0);
+
+}
+TEST(PeerLogical, And_True){
+    reg_file[R1] = 0;
+    reg_file[R2] = 1;
+    reg_file[R3] = 1;
+
+    cntrl_regs[OPERATION] = 27;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 1);
+
+}
+TEST(PeerLogical, OR_False){
+    reg_file[R1] = 1;
+    reg_file[R2] = 0;
+    reg_file[R3] = 0;
+
+    cntrl_regs[OPERATION] = 28;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 0);
+
+}
+TEST(PeerLogical, OR_True1){
+    reg_file[R1] = 0;
+    reg_file[R2] = 1;
+    reg_file[R3] = 0;
+
+    cntrl_regs[OPERATION] = 28;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 1);
+
+}
+TEST(PeerLogical, OR_True2){
+    reg_file[R1] = 0;
+    reg_file[R2] = 0;
+    reg_file[R3] = 1;
+
+    cntrl_regs[OPERATION] = 28;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 1);
+
+}
+
+TEST(PeerLogical, OR_True3){
+    reg_file[R1] = 0;
+    reg_file[R2] = 1;
+    reg_file[R3] = 1;
+
+    cntrl_regs[OPERATION] = 28;
+    cntrl_regs[OPERAND_1] = R1;
+    cntrl_regs[OPERAND_2] = R2;
+    cntrl_regs[OPERAND_3] = R3;
+
+    execute();
+
+    EXPECT_EQ(reg_file[R1], 1);
+}
+
+TEST(PeerStack, PSHR){
+    init_mem(1024);
+    init_cache(0);
+    
+    reg_file[SB] = 1024;
+    reg_file[SP] = 1024;
+    reg_file[SL] = 100;
+    reg_file[R1] = 789;
+
+    cntrl_regs[OPERATION] = 35;
+    cntrl_regs[OPERAND_1] = R1;
+
+    execute();
+
+    EXPECT_EQ(reg_file[PC], 1020u);
+    EXPECT_EQ(readWord(reg_file[PC]), 789u);
+}
+
+TEST(PeerStack, POPR) {
+    init_mem(1024);
+    init_cache(0);
+    
+    reg_file[SB] = 1024;
+    reg_file[SP] = 1020;
+    reg_file[SL] = 100;
+    reg_file[R1] = 0;
+
+    writeWord(reg_file[SP], 987);
+
+    cntrl_regs[OPERATION] = 37;
+    cntrl_regs[OPERAND_1] = R1;
+
+    bool result = execute();
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(reg_file[SP], 1024u);
+    EXPECT_EQ(reg_file[R1], 987u);
+}
+
+TEST(PeerStack, CALL) {
+    init_mem(1024);
+    init_cache(0);
+    
+    reg_file[SB] = 1024;
+    reg_file[SP] = 1024;
+    reg_file[SL] = 100;
+    reg_file[PC] = 200;
+
+    cntrl_regs[OPERATION] = 39;
+    cntrl_regs[IMMEDIATE] = 500;
+
+    bool result = execute();
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(readWord(reg_file[SP]), 200u);
+    EXPECT_EQ(reg_file[SP], 1020u);
+    EXPECT_EQ(reg_file[PC], 500u);
+}
+
+TEST(PeerStack, RET) {
+    init_mem(1024);
+    init_cache(0);
+    
+    reg_file[SB] = 1024;
+    reg_file[SP] = 1020;
+    reg_file[SL] = 100;
+
+    writeWord(reg_file[SP], 200);
+
+    cntrl_regs[OPERATION] = 40;
+
+    bool result = execute();
+
+    EXPECT_TRUE(result);
+
+    EXPECT_EQ(reg_file[PC], 200u);
+    EXPECT_EQ(reg_file[SP], 1024u);
+}
+

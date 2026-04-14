@@ -38,6 +38,15 @@ def run_and_cmp(file_pair_prefix: str, input_directory: str = input_dir, expecte
     assert cmp_output_expected(file_pair_prefix, input_directory, expected_directory)
 
 @pytest.mark.parametrize("file_prefix",
+                         ["t1-str",
+                          "t2-bts",
+                          "t3-pshr-popr",
+                          "t4-call_ret",
+                          "t5-and_or"])
+def test_peer_part4(file_prefix: str):
+    run_and_cmp(file_prefix, "peer_input/", "peer_expected/")
+
+@pytest.mark.parametrize("file_prefix",
                          ["p4_logical",
                           "p4_heap",
                           "p4_BTS",
