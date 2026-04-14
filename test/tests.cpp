@@ -1793,3 +1793,79 @@ TEST(PeerStack, RET) {
     EXPECT_EQ(reg_file[SP], 1024u);
 }
 
+TEST(Stack, PSHB) {
+  init_mem(1024);
+  init_cache(0);
+
+  reg_file[SL] = 512;
+  reg_file[SB] = 1024;
+  reg_file[SP] = 1024;
+
+  set_operands(R9);
+  set_operation(PSHB);
+
+  reg_file[R9] = 0xDEADBEEF;
+
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(1023, reg_file[SP]);
+  ASSERT_EQ(0xEF, prog_mem[1023]);
+}
+
+TEST(Stack, PSHB_StackLimits) {
+  init_mem(1024);
+  init_cache(0);
+
+  reg_file[SL] = 512;
+  reg_file[SB] = 1024;
+  reg_file[SP] = 512;
+
+  set_operands(R9);
+  set_operation(PSHB);
+
+  // operation should fail
+  ASSERT_FALSE(execute());
+  // SP should not be changed
+  ASSERT_EQ(512, reg_file[SP]);  
+}
+
+TEST(Stack, POPB) {
+  init_mem(1024);
+  init_cache(0);
+
+  reg_file[SL] = 512;
+  reg_file[SB] = 1024;
+  reg_file[SP] = 1023;
+
+  set_operands(R9);
+  set_operation(PSHB);
+
+  prog_mem[1023] = 0xAB;
+
+  ASSERT_TRUE(execute());
+
+  ASSERT_EQ(1024, reg_file[SP]);
+  ASSERT_EQ(0xAB, reg_file[R9]);
+}
+
+TEST(Stack, POPB_StackLimits) {
+  init_mem(1024);
+  init_cache(0);
+
+  reg_file[SL] = 512;
+  reg_file[SB] = 1024;
+  reg_file[SP] = 1024;
+
+  set_operands(R9);
+  set_operation(PSHB);
+
+  reg_file[R9] = 0x67;
+
+  // can't pop from stack when at SB
+  ASSERT_FALSE(execute());
+
+  // SP and R9 shouldn't be changed
+  ASSERT_EQ(1024, reg_file[SP]);
+  ASSERT_EQ(0x67, reg_file[R9]);
+}
+

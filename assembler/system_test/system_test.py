@@ -51,7 +51,9 @@ def test_peer_part4(file_prefix: str):
                           "p4_heap",
                           "p4_BTS",
                           "p4_STR_numeric",
-                          "p4_STR_chars"])
+                          "p4_STR_chars",
+                          "p4_POPB",
+                          "p4_PSHB"])
 def test_part4(file_prefix):
     run_and_cmp(file_prefix, "input/", "expected/")
 
