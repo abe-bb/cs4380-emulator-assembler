@@ -146,6 +146,7 @@ def increment_index(line: AsmLine, allow_eol=False):
         raise AssemblerError(line.line_num)
 
 # define required components per instruction
+nothing = [OperandType.DC, OperandType.DC, OperandType.DC, OperandType.DC_I, 0]
 reg1 = [OperandType.Register, OperandType.DC, OperandType.DC, OperandType.DC_I, 0]
 reg2 = [OperandType.Register, OperandType.Register, OperandType.DC, OperandType.DC_I, 1]
 reg3 = [OperandType.Register, OperandType.Register, OperandType.Register, OperandType.DC_I, 2]
@@ -189,6 +190,12 @@ inst_operands = {
     "ALCI": reg1_numeric,
     "ALLC": reg1_addr,
     "IALLC": reg2,
+    "PSHR": reg1,
+    "PSHB": reg1,
+    "POPR": reg1,
+    "POPB": reg1,
+    "CALL": addr,
+    "RET": nothing,
 }
 
 valid_registers = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15",
@@ -200,7 +207,8 @@ bin_rep = {
     "JMP": 1, "JMR": 2, "BNZ": 3, "BGT": 4, "BLT": 5, "BRZ": 6, "MOV": 7, "MOVI": 8, "LDA": 9, "STR": 10, "LDR": 11,
     "STB": 12, "LDB": 13, "ISTR": 14, "ILDR": 15, "ISTB": 16, "ILDB": 17, "ADD": 18, "ADDI": 19,
     "SUB": 20, "SUBI": 21, "MUL": 22, "MULI": 23, "DIV": 24, "SDIV": 25, "DIVI": 26, "AND": 27, "OR": 28, "CMP": 29,
-    "CMPI": 30, "TRP": 31, "ALCI": 32, "ALLC": 33, "IALLC": 34,
+    "CMPI": 30, "TRP": 31, "ALCI": 32, "ALLC": 33, "IALLC": 34, "PSHR": 35, "PSHB": 36, "POPR": 37, "POPB": 38,
+    "CALL": 39, "RET": 40,
     # registers
     "R0": 0, "R1": 1, "R2": 2, "R3": 3, "R4": 4, "R5": 5, "R6": 6, "R7": 7, "R8": 8, "R9": 9, "R10": 10, "R11": 11,
     "R12": 12, "R13": 13, "R14": 14, "R15": 15, "PC": 16, "SL": 17, "SB": 18, "SP": 19, "FP": 20, "HP": 21
@@ -258,7 +266,6 @@ class Instruction(State):
         if not instruction in inst_operands:
             return Error()
 
-        skip_space_tab(line)
 
         # store binary representation of the instruction
         asm_state.bytecode.append(bin_rep[instruction])
