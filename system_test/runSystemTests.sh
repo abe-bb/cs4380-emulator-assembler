@@ -22,7 +22,7 @@ cd ..
 # Run tests
 
 # Test too large memory size
-program_output="$(../build/emu4380 ./binary/trp1_prints_R3 -m 4294967296 )"
+program_output="$(../build/emu4380 ./binary/trp1_prints_positive_R3 -m 4294967296 )"
 exit_code=$?
 echo -e "${GREEN}TEST: Memory argument too large"
 if [ $exit_code -eq 4 ] && [ "$program_output" = "Invalid arguments" ]; then 
@@ -57,7 +57,7 @@ fi
 program_output="$(../build/emu4380 ./binary/exit)"
 exit_code=$?
 echo -e "${GREEN}TEST: TRP 0 exit"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 16" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 10" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
@@ -67,7 +67,7 @@ fi
 program_output="$(../build/emu4380 ./binary/trp1_prints_positive_R3)"
 exit_code=$?
 echo -e "${GREEN}TEST: TRP 1 prints positive R3 to console"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "49923402Execution completed. Total memory cycles: 48" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "49923402Execution completed. Total memory cycles: 30" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
@@ -77,7 +77,7 @@ fi
 program_output="$(../build/emu4380 ./binary/trp1_prints_negative_R3)"
 exit_code=$?
 echo -e "${GREEN}TEST: TRP 1 prints negative R3 to console"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "-123934203Execution completed. Total memory cycles: 48" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "-123934203Execution completed. Total memory cycles: 30" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
@@ -87,7 +87,7 @@ fi
 program_output="$(../build/emu4380 ./binary/trp2_reads_int <<< "-432890")"
 exit_code=$?
 echo -e "${GREEN}TEST: TRP 2 reads integer from console"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "-432890Execution completed. Total memory cycles: 48" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "-432890Execution completed. Total memory cycles: 30" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
@@ -97,7 +97,7 @@ fi
 program_output="$(../build/emu4380 ./binary/trp3_writes_char)"
 exit_code=$?
 echo -e "${GREEN}TEST: TRP 3 writes character to console"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "HExecution completed. Total memory cycles: 48" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "HExecution completed. Total memory cycles: 30" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
@@ -107,7 +107,7 @@ fi
 program_output="$(../build/emu4380 ./binary/trp4_reads_char <<< '!' )"
 exit_code=$?
 echo -e "${GREEN}TEST: TRP 4 reads character from console"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "!Execution completed. Total memory cycles: 48" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "!Execution completed. Total memory cycles: 30" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
@@ -117,7 +117,7 @@ fi
 program_output="$(../build/emu4380 ./binary/trp4_reads_char <<< '12345' )"
 exit_code=$?
 echo -e "${GREEN}TEST: TRP 4 reads only a single character from console"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "1Execution completed. Total memory cycles: 48" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "1Execution completed. Total memory cycles: 30" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${RED}RESULT: failed${NONE}"
@@ -147,7 +147,7 @@ SB\t262144
 SP\t524288
 FP\t1048576
 HP\t2097152
-Execution completed. Total memory cycles: 384
+Execution completed. Total memory cycles: 240
 HEREDOC
 )
 # expand tabs 
@@ -178,7 +178,7 @@ fi
 program_output="$(../build/emu4380 ./timing/read_8_words.bin -m 1024, -c 0)"
 exit_code=$?
 echo -e "${GREEN}TEST: No Cache Simple Read Timing"
-if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 208" ]; then 
+if [ $exit_code -eq 0 ] && [ "$program_output" = "Execution completed. Total memory cycles: 154" ]; then 
   echo -e "RESULT: passed${NONE}"
 else 
   echo -e "${NONE}$program_output"

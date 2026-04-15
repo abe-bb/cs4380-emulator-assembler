@@ -60,6 +60,7 @@ void setup_cache(Args& args) {
     if (args.cache_type == Custom) {
         delete cache;
         cache = new NWayCache(prog_mem, args.block_size, args.cache_lines, args.associativity);
+        cache_type = 4;
     }
     else {
         init_cache(args.cache_type);
