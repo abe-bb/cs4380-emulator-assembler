@@ -546,6 +546,101 @@ bool iallc() {
   return true;
 }
 
+bool pshr() {
+  auto r_src = cntrl_regs[OPERAND_1];
+
+  // check that SP will be within bounds
+  if (reg_file[SP] - 4 < reg_file[SL]) {
+    return false;
+  }
+
+  // write the word to the stack
+  reg_file[SP] -= 4;
+  writeWord(reg_file[SP], reg_file[r_src]);
+  
+  return true;
+}
+
+bool pshb() {
+  auto r_src = cntrl_regs[OPERAND_1];
+
+  // check that SP will be within bounds
+  if (reg_file[SP] - 1 < reg_file[SL]) {
+    return false;
+  }
+
+  // write the byte to the stack
+  reg_file[SP] -= 1;
+  writeByte(reg_file[SP], reg_file[r_src]);
+  
+  return true;
+}
+
+bool popr() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+
+  // check that SP will be within bounds
+  if (reg_file[SP] + 4 > reg_file[SB]) {
+    return false;
+  }
+
+  // read the word from the stack
+  reg_file[r_dest] = readWord(reg_file[SP]);
+  reg_file[SP] += 4;
+  
+  return true;
+}
+
+bool popb() {
+  auto r_dest = cntrl_regs[OPERAND_1];
+
+  // check that SP will be within bounds
+  if (reg_file[SP] + 1 > reg_file[SB]) {
+    return false;
+  }
+
+  // read the byte from the stack
+  reg_file[r_dest] = readByte(reg_file[SP]);
+  reg_file[SP] += 1;
+  
+  return true;
+}
+
+bool call() {
+  auto addr = cntrl_regs[IMMEDIATE];
+
+  if (!validate_address(addr)) {
+    return false;
+  }
+    
+  // check that SP will be within bounds
+  if (reg_file[SP] - 4 < reg_file[SL]) {
+    return false;
+  }
+
+  // write PC to the stack
+  reg_file[SP] -= 4;
+  writeWord(reg_file[SP], reg_file[PC]);
+
+  // set PC to address
+  reg_file[PC] = addr;
+  
+  return true;  
+}
+
+bool ret() {
+  // check that SP will be within bounds
+  if (reg_file[SP] + 4 > reg_file[SB]) {
+    return false;
+  }
+
+  // read the address from the stack into PC
+  reg_file[PC] = readWord(reg_file[SP]);
+  reg_file[SP] += 4;
+
+  return true;
+}
+
 bool init_mem(unsigned int size) {
   prog_mem = new unsigned char[size];
   MEM_SIZE = size;
@@ -731,6 +826,18 @@ bool execute() {
       return allc();
     case IALLC:
       return iallc();
+    case PSHR:
+      return pshr();
+    case PSHB:
+      return pshb();
+    case POPR:
+      return popr();
+    case POPB:
+      return popb();
+    case CALL:
+      return call();
+    case RET:
+      return ret();
     default:
       std::cout << "execute() called with invalid operation!";
       throw std::runtime_error("Can't handle invalid operation!");

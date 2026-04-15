@@ -1728,8 +1728,8 @@ TEST(PeerStack, PSHR){
 
     execute();
 
-    EXPECT_EQ(reg_file[PC], 1020u);
-    EXPECT_EQ(readWord(reg_file[PC]), 789u);
+    EXPECT_EQ(reg_file[SP], 1020u);
+    EXPECT_EQ(readWord(reg_file[SP]), 789u);
 }
 
 TEST(PeerStack, POPR) {
@@ -1838,7 +1838,7 @@ TEST(Stack, POPB) {
   reg_file[SP] = 1023;
 
   set_operands(R9);
-  set_operation(PSHB);
+  set_operation(POPB);
 
   prog_mem[1023] = 0xAB;
 
@@ -1857,7 +1857,7 @@ TEST(Stack, POPB_StackLimits) {
   reg_file[SP] = 1024;
 
   set_operands(R9);
-  set_operation(PSHB);
+  set_operation(POPB);
 
   reg_file[R9] = 0x67;
 
