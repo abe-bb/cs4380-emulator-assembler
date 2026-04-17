@@ -253,3 +253,18 @@ else
   echo -e "${RED}RESULT: failed${NONE}"
 fi
 
+# Test program register initializations (program size 96 bytes)
+program_output="$(../build/emu4380 -m 1024 assembly/register_startup.bin)"
+exit_code=$?
+expected_output=$(cat <<HEREDOC
+1024, 1024, 96Execution completed. Total memory cycles: 158
+HEREDOC
+)
+
+echo -e "${GREEN}TEST: Stack register initialization"
+if [ $exit_code -eq 0 ] && [ "$program_output" = "$expected_output" ]; then 
+  echo -e "RESULT: passed${NONE}"
+else 
+  echo -e "${NONE}$program_output"
+  echo -e "${RED}RESULT: failed${NONE}"
+fi

@@ -444,6 +444,32 @@ bool trp4() {
   return true;
 }
 
+bool trp5() {
+  auto addr = reg_file[R3];
+
+  if (!validate_address(addr, 2)) {
+    return false;
+  }
+
+  unsigned char max_str_len = readByte(addr);
+
+  for (unsigned int i = 1; i <= max_str_len;  i++) {
+    char byte = readByte(addr + i);
+    // null termination 
+    if (byte == 0) {
+      break;
+    }
+
+    std::cout << byte;
+  }
+
+  return true;
+}
+
+bool trp6() {
+  return false;
+}
+
 std::string sp_reg_names[] = {"PC", "SL", "SB", "SP", "FP", "HP"};
 bool trp98() {
   for (int i = 0; i < 22; i++) {
@@ -464,7 +490,7 @@ bool trp() {
   auto immed = cntrl_regs[IMMEDIATE];
 
   // validate immediate
-  if (!(immed <= 4 || immed == 98)) {
+  if (!(immed <= 6 || immed == 98)) {
     return false;
   }
 
@@ -479,6 +505,10 @@ bool trp() {
       return trp3();
     case 4:
       return trp4();
+    case 5:
+      return trp5();
+    case 6:
+      return trp6();
     case 98:
       return trp98();
     default:
