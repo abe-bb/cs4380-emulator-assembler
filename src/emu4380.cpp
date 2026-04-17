@@ -467,7 +467,27 @@ bool trp5() {
 }
 
 bool trp6() {
-  return false;
+  auto addr = reg_file[R3];
+
+  std::string input;
+  getline(std::cin, input);
+
+  auto total_len = input.size() + 2;
+  if (!validate_address(addr, total_len) && input.size() <= 255) {
+    return false;
+  }
+
+  // write string size
+  writeByte(addr, input.size());
+
+  // write string
+  for (auto i = 0; i < input.size(); i++) {
+    writeByte(addr + i + 1, input[i]);
+  }
+
+  // write null terminator
+  writeByte(addr + input.size() + 1, 0);
+  return true;
 }
 
 std::string sp_reg_names[] = {"PC", "SL", "SB", "SP", "FP", "HP"};
