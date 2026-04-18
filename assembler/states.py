@@ -97,14 +97,21 @@ def parse_string(line: AsmLine) -> str:
         raise AssemblerError(line.line_num)
     increment_index(line)
 
-    start_index = line.index
+    build_str = []
+
     while line.line[line.index] != "\"":
+        # handle escape characters
+        if line.line[line.index] == "\\":
+            increment_index(line)
+            char = escape_chars[line.line[line.index]]
+            build_str.append(char)
+        else:
+            build_str.append(line.line[line.index])
         increment_index(line)
-    end_index = line.index
 
     # increment index beyond closing double quotes
     increment_index(line, allow_eol=True)
-    return line.line[start_index:end_index]
+    return "".join(build_str)
 
 def handle_immediate_numeric(asm_state: AsmState, line: AsmLine):
     if line.line[line.index] == "#":
