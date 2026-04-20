@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# build assembler
+cd ../../debug/
+make
+cd ../assembler/proj4progs/
+
+# Program A
+if [ "$1" = "a" ]; then
+  rm ProgramA.bin
+  python ../asm4380.py ProgramA.asm
+  ../../debug/emu4380 ProgramA.bin
+fi 
+
+# Program B
+if [ "$1" = "b" ]; then
+  rm ProgramB.bin
+  python ../asm4380.py ProgramB.asm
+  ../../debug/emu4380 ProgramB.bin
+fi
+
+# Program C
+if [ "$1" = "c" ]; then
+  rm ProgramC.bin
+  python ../asm4380.py ProgramC.asm
+  ../../debug/emu4380 ProgramC.bin
+fi
+
+# Program D (default program to run)
+if [ "$1" = "d" ] || [ "$#" = "0" ]; then
+  rm ProgramD.bin
+  python ../asm4380.py ProgramD.asm
+  ../../debug/emu4380 ProgramD.bin
+fi
+
+
